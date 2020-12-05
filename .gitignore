@@ -24,3 +24,6 @@ advent_of_code_2018-*.tar
 
 # Ignore configuration secrets
 /config/secrets.exs
+
+# VSCode workspace file
+*.code-workspace
