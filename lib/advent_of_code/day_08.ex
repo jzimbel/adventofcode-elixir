@@ -1,43 +1,36 @@
 defmodule AdventOfCode.Day08 do
   defmodule Bootcode do
-    @enforce_keys ~w[instrs i acc seen_i max_i]a
+    @enforce_keys ~w[instrs i acc]a
     defstruct @enforce_keys
 
     def new(instrs_string) do
-      instrs = parse_instructions(instrs_string)
-
-      %Bootcode{
-        instrs: instrs,
-        i: 0,
-        acc: 0,
-        seen_i: MapSet.new(),
-        max_i: Enum.max(Map.keys(instrs))
-      }
+      %Bootcode{instrs: parse_instructions(instrs_string), i: 0, acc: 0}
     end
 
-    def run(%Bootcode{} = t) do
+    def run(%Bootcode{} = t, visited \\ MapSet.new()) do
       cond do
-        t.i in t.seen_i ->
+        t.i in visited ->
           {:loop, t.acc}
 
-        t.i == t.max_i + 1 ->
+        t.i == map_size(t.instrs) ->
           {:exit, t.acc}
 
         true ->
           t.instrs[t.i]
           |> execute_instruction(t)
-          |> run()
+          |> run(MapSet.put(visited, t.i))
       end
     end
 
-    def swap_op_at(%Bootcode{} = t, index) do
-      %{t | instrs: %{t.instrs | index => swap_op(t.instrs[index])}}
+    def run_swapped(%Bootcode{} = t, swap_index) do
+      t
+      |> swap_op_at(swap_index)
+      |> run()
     end
 
     defp parse_instructions(instrs_string) do
       instrs_string
-      |> String.trim()
-      |> String.split("\n")
+      |> String.split("\n", trim: true)
       |> Enum.map(&String.split/1)
       |> Enum.map(fn [op, arg] ->
         {String.to_existing_atom(op), String.to_integer(arg)}
@@ -47,15 +40,19 @@ defmodule AdventOfCode.Day08 do
     end
 
     defp execute_instruction({:acc, n}, t) do
-      %{t | i: t.i + 1, acc: t.acc + n, seen_i: MapSet.put(t.seen_i, t.i)}
+      %{t | i: t.i + 1, acc: t.acc + n}
     end
 
     defp execute_instruction({:jmp, n}, t) do
-      %{t | i: t.i + n, seen_i: MapSet.put(t.seen_i, t.i)}
+      %{t | i: t.i + n}
     end
 
     defp execute_instruction({:nop, _}, t) do
-      %{t | i: t.i + 1, seen_i: MapSet.put(t.seen_i, t.i)}
+      %{t | i: t.i + 1}
+    end
+
+    defp swap_op_at(t, i) do
+      %{t | instrs: %{t.instrs | i => swap_op(t.instrs[i])}}
     end
 
     defp swap_op({:nop, n}), do: {:jmp, n}
@@ -75,19 +72,12 @@ defmodule AdventOfCode.Day08 do
     original = Bootcode.new(args)
 
     original.instrs
-    |> Enum.reject(&match?({_, {:acc, _}}, &1))
-    |> Enum.map(fn {i, _} -> i end)
-    |> Enum.find_value(fn swap_index ->
-      case run_swapped(original, swap_index) do
-        {:exit, acc} -> acc
-        _ -> false
-      end
+    |> Stream.reject(&match?({_, {:acc, _}}, &1))
+    |> Stream.map(fn {i, _} -> i end)
+    |> Stream.map(&Bootcode.run_swapped(original, &1))
+    |> Enum.find_value(fn
+      {:exit, acc} -> acc
+      _ -> false
     end)
-  end
-
-  defp run_swapped(bootcode, swap_index) do
-    bootcode
-    |> Bootcode.swap_op_at(swap_index)
-    |> Bootcode.run()
   end
 end
