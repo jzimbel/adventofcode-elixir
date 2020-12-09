@@ -15,31 +15,23 @@ defmodule AdventOfCode.Day08 do
       }
     end
 
-    def run(%Bootcode{instrs: instrs, i: i, seen_i: seen_i, max_i: max_i} = t) do
+    def run(%Bootcode{} = t) do
       cond do
-        i in seen_i ->
-          {:loop, t}
+        t.i in t.seen_i ->
+          {:loop, t.acc}
 
-        i == max_i + 1 ->
-          {:exit, t}
+        t.i == t.max_i + 1 ->
+          {:exit, t.acc}
 
         true ->
-          instrs[i]
+          t.instrs[t.i]
           |> execute_instruction(t)
           |> run()
       end
     end
 
-    defp execute_instruction({:acc, n}, %{i: i, acc: acc, seen_i: seen_i} = t) do
-      %{t | i: i + 1, acc: acc + n, seen_i: MapSet.put(seen_i, i)}
-    end
-
-    defp execute_instruction({:jmp, n}, %{i: i, seen_i: seen_i} = t) do
-      %{t | i: i + n, seen_i: MapSet.put(seen_i, i)}
-    end
-
-    defp execute_instruction({:nop, _}, %{i: i, seen_i: seen_i} = t) do
-      %{t | i: i + 1, seen_i: MapSet.put(seen_i, i)}
+    def swap_op_at(%Bootcode{} = t, index) do
+      %{t | instrs: %{t.instrs | index => swap_op(t.instrs[index])}}
     end
 
     defp parse_instructions(instrs_string) do
@@ -51,43 +43,48 @@ defmodule AdventOfCode.Day08 do
       |> Enum.with_index()
       |> Enum.into(%{}, fn {instr, i} -> {i, instr} end)
     end
+
+    defp execute_instruction({:acc, n}, t) do
+      %{t | i: t.i + 1, acc: t.acc + n, seen_i: MapSet.put(t.seen_i, t.i)}
+    end
+
+    defp execute_instruction({:jmp, n}, t) do
+      %{t | i: t.i + n, seen_i: MapSet.put(t.seen_i, t.i)}
+    end
+
+    defp execute_instruction({:nop, _}, t) do
+      %{t | i: t.i + 1, seen_i: MapSet.put(t.seen_i, t.i)}
+    end
+
+    defp swap_op({:nop, n}), do: {:jmp, n}
+    defp swap_op({:jmp, n}), do: {:nop, n}
   end
 
   def part1(args) do
-    {:loop, halted} =
+    {:loop, acc} =
       args
       |> Bootcode.new()
       |> Bootcode.run()
 
-    halted.acc
+    acc
   end
 
   def part2(args) do
     original = Bootcode.new(args)
 
-    swap_candidate_indexes =
-      original.instrs
-      |> Enum.reject(&match?({_, {:acc, _}}, &1))
-      |> Enum.map(fn {i, _} -> i end)
-
-    halted = get_terminated_bootcode(swap_candidate_indexes, original)
-    halted.acc
+    original.instrs
+    |> Enum.reject(&match?({_, {:acc, _}}, &1))
+    |> Enum.map(fn {i, _} -> i end)
+    |> Enum.find_value(&run_swapped(original, &1))
   end
 
-  defp get_terminated_bootcode([swap_index | swap_indexes], original) do
-    original
-    |> Map.update!(:instrs, &swap_op_at(&1, swap_index))
+  defp run_swapped(bootcode, swap_index) do
+    bootcode
+    |> Bootcode.swap_op_at(swap_index)
     |> Bootcode.run()
     |> case do
-      {:exit, halted} -> halted
-      _ -> get_terminated_bootcode(swap_indexes, original)
+      {:exit, acc} -> acc
+      _ -> false
     end
   end
-
-  defp swap_op_at(instrs, index) do
-    %{instrs | index => swap_op(instrs[index])}
-  end
-
-  defp swap_op({:nop, n}), do: {:jmp, n}
-  defp swap_op({:jmp, n}), do: {:nop, n}
 end
