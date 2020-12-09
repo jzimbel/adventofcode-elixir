@@ -39,7 +39,9 @@ defmodule AdventOfCode.Day08 do
       |> String.trim()
       |> String.split("\n")
       |> Enum.map(&String.split/1)
-      |> Enum.map(fn [op, arg] -> {String.to_existing_atom(op), String.to_integer(arg)} end)
+      |> Enum.map(fn [op, arg] ->
+        {String.to_existing_atom(op), String.to_integer(arg)}
+      end)
       |> Enum.with_index()
       |> Enum.into(%{}, fn {instr, i} -> {i, instr} end)
     end
@@ -75,16 +77,17 @@ defmodule AdventOfCode.Day08 do
     original.instrs
     |> Enum.reject(&match?({_, {:acc, _}}, &1))
     |> Enum.map(fn {i, _} -> i end)
-    |> Enum.find_value(&run_swapped(original, &1))
+    |> Enum.find_value(fn swap_index ->
+      case run_swapped(original, swap_index) do
+        {:exit, acc} -> acc
+        _ -> false
+      end
+    end)
   end
 
   defp run_swapped(bootcode, swap_index) do
     bootcode
     |> Bootcode.swap_op_at(swap_index)
     |> Bootcode.run()
-    |> case do
-      {:exit, acc} -> acc
-      _ -> false
-    end
   end
 end
