@@ -35,29 +35,21 @@ defmodule AdventOfCode.Day09 do
   end
 
   defp find_invalid(nums, preamble, preamble_length) do
-    Enum.reduce_while(nums, preamble, fn n, prev ->
-      prev
-      |> Stream.take(preamble_length)
-      |> addends_exist?(n)
-      |> case do
-        true -> {:cont, [n | prev]}
-        false -> {:halt, n}
-      end
+    nums
+    |> Stream.transform(preamble, fn n, prev ->
+      {[{Stream.take(prev, preamble_length), n}], [n | prev]}
     end)
+    |> Stream.reject(fn {prev, n} -> addends_exist?(prev, n) end)
+    |> Enum.at(0)
+    |> elem(1)
   end
 
   defp addends_exist?(nums, target) do
     nums
-    |> Enum.reduce_while(MapSet.new(), fn n, found ->
-      cond do
-        (target - n) in found -> {:halt, :exists}
-        true -> {:cont, MapSet.put(found, n)}
-      end
+    |> Stream.transform(MapSet.new(), fn n, found ->
+      {[{n, found}], MapSet.put(found, n)}
     end)
-    |> case do
-      :exists -> true
-      _ -> false
-    end
+    |> Enum.any?(fn {n, found} -> (target - n) in found end)
   end
 
   defp find_contiguous_addends(nums, target) do
