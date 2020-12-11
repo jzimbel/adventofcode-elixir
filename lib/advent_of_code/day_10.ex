@@ -2,7 +2,7 @@ defmodule AdventOfCode.Day10 do
   def part1(args) do
     args
     |> parse_adapters()
-    |> Stream.chunk_every(2, 1, :discard)
+    |> Enum.chunk_every(2, 1, :discard)
     |> Enum.frequencies_by(fn [a, b] -> b - a end)
     |> Map.take([1, 3])
     |> Map.values()
@@ -12,8 +12,8 @@ defmodule AdventOfCode.Day10 do
   def part2(args) do
     args
     |> parse_adapters()
-    # Skip the 0-jolt adapter and just init the accumulator with its (known) result
-    # since it would require a special case in the reducer function.
+    # Skip the 0-jolt outlet and just init the accumulator with its (known)
+    # result since it would require a special case in the reducer function.
     |> Enum.drop(1)
     |> Enum.reduce({1, %{0 => 1}}, fn n, {_, prev_counts} ->
       path_count =
