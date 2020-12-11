@@ -14,6 +14,9 @@ defmodule AdventOfCode.CharGrid do
   @enforce_keys ~w[grid width height]a
   defstruct @enforce_keys
 
+  # List of coords that produce the 8 coordinates surrounding a given coord when added to it
+  @adjacent_deltas for x <- -1..1, y <- -1..1, not (x == 0 and y == 0), do: {x, y}
+
   @spec from_input(String.t()) :: t()
   def from_input(input) do
     charlists =
@@ -38,8 +41,52 @@ defmodule AdventOfCode.CharGrid do
     }
   end
 
+  @doc "Gets the value at the given coordinates."
   @spec at(t(), coordinates) :: char | nil
   def at(%__MODULE__{} = t, coords) do
     t.grid[coords]
   end
+
+  @doc "Applies `fun` to each cell in the CharGrid to produce a new CharGrid."
+  @spec map(t(), ({coordinates, char} -> char)) :: t()
+  def map(%__MODULE__{} = t, fun) do
+    %{t | grid: for({coords, _} = entry <- t.grid, into: %{}, do: {coords, fun.(entry)})}
+  end
+
+  @doc "Returns the number of cells in the CharGrid for which `fun` returns a truthy value."
+  @spec count(t(), ({coordinates, char} -> as_boolean(term))) :: non_neg_integer()
+  def count(%__MODULE__{} = t, fun) do
+    Enum.count(t.grid, fun)
+  end
+
+  @doc "Returns a list of values from the up to 8 cells adjacent to the one at `coords`."
+  @spec adjacent_values(t(), coordinates) :: list(char)
+  def adjacent_values(%__MODULE__{} = t, coords) do
+    @adjacent_deltas
+    |> Enum.map(&sum_coordinates(coords, &1))
+    |> Enum.map(&at(t, &1))
+    |> Enum.reject(&is_nil/1)
+  end
+
+  @doc """
+  Returns a list of values from the up to 8 cells reachable by a chess queen's move from the
+  cell at `coords`.
+
+  The optional `empty_char` (default `?.`) dictates which cells are considered unoccupied.
+  """
+  @spec queen_move_values(t(), coordinates, char) :: list(char)
+  def queen_move_values(%__MODULE__{} = t, coords, empty_char \\ ?.) do
+    @adjacent_deltas
+    |> Enum.map(&find_nonempty_on_line(t, &1, sum_coordinates(coords, &1), empty_char))
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp find_nonempty_on_line(t, step, coords, empty_char) do
+    case t.grid[coords] do
+      ^empty_char -> find_nonempty_on_line(t, step, sum_coordinates(coords, step), empty_char)
+      val -> val
+    end
+  end
+
+  defp sum_coordinates({x1, y1}, {x2, y2}), do: {x1 + x2, y1 + y2}
 end
