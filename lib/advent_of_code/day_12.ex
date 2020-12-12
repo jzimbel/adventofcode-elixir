@@ -18,22 +18,19 @@ defmodule AdventOfCode.Day12 do
 
     defstruct heading: {1, 0}
 
-    for {dir, norm_vec} <- %{?N => {0, -1}, ?E => {1, 0}, ?S => {0, 1}, ?W => {-1, 0}} do
-      def do_action(ship, <<unquote(dir), mag::binary>>) do
-        %{ship | posn: translate(ship.posn, unquote(norm_vec), String.to_integer(mag))}
-      end
+    def do_action(ship, <<dir, mag::binary>>) when dir in 'NESW' do
+      posn = translate(ship.posn, dir, String.to_integer(mag))
+      %{ship | posn: posn}
     end
 
-    for {dir, sign} <- %{?L => 1, ?R => -1} do
-      def do_action(ship, <<unquote(dir), deg::binary>>) do
-        heading = rotate(ship.nav.heading, String.to_integer(deg), unquote(sign))
-
-        %{ship | nav: %Nav1{heading: heading}}
-      end
+    def do_action(ship, <<rot_dir, deg::binary>>) when rot_dir in 'LR' do
+      heading = rotate(ship.nav.heading, String.to_integer(deg), rot_dir)
+      %{ship | nav: %{ship.nav | heading: heading}}
     end
 
     def do_action(ship, <<?F, mag::binary>>) do
-      %{ship | posn: translate(ship.posn, ship.nav.heading, String.to_integer(mag))}
+      posn = translate(ship.posn, ship.nav.heading, String.to_integer(mag))
+      %{ship | posn: posn}
     end
   end
 
@@ -42,24 +39,19 @@ defmodule AdventOfCode.Day12 do
 
     defstruct waypoint: {10, -1}
 
-    for {dir, norm_vec} <- %{?N => {0, -1}, ?E => {1, 0}, ?S => {0, 1}, ?W => {-1, 0}} do
-      def do_action(ship, <<unquote(dir), mag::binary>>) do
-        waypoint = translate(ship.nav.waypoint, unquote(norm_vec), String.to_integer(mag))
-
-        %{ship | nav: %Nav2{waypoint: waypoint}}
-      end
+    def do_action(ship, <<dir, mag::binary>>) when dir in 'NESW' do
+      waypoint = translate(ship.nav.waypoint, dir, String.to_integer(mag))
+      %{ship | nav: %{ship.nav | waypoint: waypoint}}
     end
 
-    for {dir, sign} <- %{?L => 1, ?R => -1} do
-      def do_action(%{nav: nav} = ship, <<unquote(dir), deg::binary>>) do
-        waypoint = rotate(nav.waypoint, String.to_integer(deg), unquote(sign))
-
-        %{ship | nav: %Nav2{waypoint: waypoint}}
-      end
+    def do_action(ship, <<rot_dir, deg::binary>>) when rot_dir in 'LR' do
+      waypoint = rotate(ship.nav.waypoint, String.to_integer(deg), rot_dir)
+      %{ship | nav: %{ship.nav | waypoint: waypoint}}
     end
 
     def do_action(ship, <<?F, mag::binary>>) do
-      %{ship | posn: translate(ship.posn, ship.nav.waypoint, String.to_integer(mag))}
+      posn = translate(ship.posn, ship.nav.waypoint, String.to_integer(mag))
+      %{ship | posn: posn}
     end
   end
 

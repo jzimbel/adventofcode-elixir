@@ -8,31 +8,55 @@ defmodule AdventOfCode.Point do
 
   @type t :: {integer(), integer()}
 
-  @doc "Translates `pt` by `dir`, `mag` times."
-  @spec translate(t(), t(), integer()) :: t()
+  @type direction :: ?N | ?E | ?S | ?W
+  @type rot_direction :: ?L | ?R
+
+  defguardp is_cardinal(deg) when rem(deg, 90) == 0
+
+  @doc """
+  Translates `pt` by `dir`, `mag` times.
+
+  `dir` can be either an `{x, y}` pair,
+  or one of `?N` `?E` `?S` `?W`; each representing a unit vector in that direction.
+  """
+  @spec translate(t(), t() | direction, integer()) :: t()
   def translate(pt, dir, mag \\ 1)
 
   def translate({x, y}, {dx, dy}, mag) do
     {x + mag * dx, y + mag * dy}
   end
 
+  for {dir, unit_vec} <- %{?N => {0, -1}, ?E => {1, 0}, ?S => {0, 1}, ?W => {-1, 0}} do
+    def translate(pt, unquote(dir), mag) do
+      translate(pt, unquote(unit_vec), mag)
+    end
+  end
+
   @doc """
-  Rotates `pt` about `center` by `deg` degrees, in the direction of `sign`.
+  Rotates `pt` about `center` by `deg` degrees, in the direction of `dir`.
 
   `deg` must be a multiple of 90.
 
-  A `sign` value of 1 represents counterclockwise rotation; -1 clockwise.
+  A `dir` value of ?L or 1 represents counterclockwise rotation; ?R or -1 clockwise.
 
   `center` can be omitted to perform a rotation about the origin.
   """
-  @spec rotate(t(), t(), non_neg_integer, -1 | 1) :: t()
-  def rotate(pt, center \\ @origin, deg, sign)
+  @spec rotate(t(), t(), non_neg_integer, -1 | 1 | rot_direction) :: t()
+  def rotate(pt, center \\ @origin, deg, rot_dir)
 
   def rotate(pt, _, 0, _), do: pt
 
-  def rotate(pt, @origin, deg, sign), do: do_rotate(pt, deg, rotater_for(sign))
+  for {rot_dir, sign} <- %{?L => 1, ?R => -1} do
+    def rotate(pt, center, deg, unquote(rot_dir)) do
+      rotate(pt, center, deg, unquote(sign))
+    end
+  end
 
-  def rotate(pt, {cx, cy}, deg, sign) when rem(deg, 90) == 0 do
+  def rotate(pt, @origin, deg, sign) when is_cardinal(deg) do
+    do_rotate(pt, deg, rotater_for(sign))
+  end
+
+  def rotate(pt, {cx, cy}, deg, sign) when is_cardinal(deg) do
     pt
     |> translate({-cx, -cy})
     |> rotate(deg, sign)
