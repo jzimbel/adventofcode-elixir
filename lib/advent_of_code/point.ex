@@ -37,7 +37,7 @@ defmodule AdventOfCode.Point do
 
   `deg` must be a multiple of 90.
 
-  A `dir` value of ?L or 1 represents counterclockwise rotation; ?R or -1 clockwise.
+  A `dir` value of `?L` or 1 represents counterclockwise rotation; `?R` or -1 clockwise.
 
   `center` can be omitted to perform a rotation about the origin.
   """
@@ -46,20 +46,14 @@ defmodule AdventOfCode.Point do
 
   def rotate(pt, _, 0, _), do: pt
 
-  for {rot_dir, sign} <- %{?L => 1, ?R => -1} do
-    def rotate(pt, center, deg, unquote(rot_dir)) do
-      rotate(pt, center, deg, unquote(sign))
-    end
+  def rotate(pt, @origin, deg, rot_dir) when is_cardinal(deg) do
+    do_rotate(pt, deg, rotater_for(rot_dir))
   end
 
-  def rotate(pt, @origin, deg, sign) when is_cardinal(deg) do
-    do_rotate(pt, deg, rotater_for(sign))
-  end
-
-  def rotate(pt, {cx, cy}, deg, sign) when is_cardinal(deg) do
+  def rotate(pt, {cx, cy}, deg, rot_dir) when is_cardinal(deg) do
     pt
     |> translate({-cx, -cy})
-    |> rotate(deg, sign)
+    |> rotate(deg, rot_dir)
     |> translate({cx, cy})
   end
 
@@ -67,7 +61,7 @@ defmodule AdventOfCode.Point do
 
   defp do_rotate(pt, deg, rotater), do: do_rotate(rotater.(pt), deg - 90, rotater)
 
-  # Given a direction sign (1 for counterclockwise, -1 for clockwise), produces a
-  # function that rotates a point by 90 degrees in that direction about the origin.
+  defp rotater_for(?L), do: rotater_for(1)
+  defp rotater_for(?R), do: rotater_for(-1)
   defp rotater_for(sign), do: fn {x, y} -> {sign * y, -sign * x} end
 end
