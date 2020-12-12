@@ -1,7 +1,9 @@
 defmodule AdventOfCode.CharGrid do
   @moduledoc "Data structure representing a grid of characters by a map of {x, y} => char"
 
-  @type t :: %__MODULE__{
+  alias __MODULE__
+
+  @type t :: %CharGrid{
           grid: grid,
           width: non_neg_integer,
           height: non_neg_integer
@@ -34,7 +36,7 @@ defmodule AdventOfCode.CharGrid do
         {{x, y}, char}
       end
 
-    %__MODULE__{
+    %CharGrid{
       grid: grid,
       width: width,
       height: height
@@ -43,25 +45,25 @@ defmodule AdventOfCode.CharGrid do
 
   @doc "Gets the value at the given coordinates."
   @spec at(t(), coordinates) :: char | nil
-  def at(%__MODULE__{} = t, coords) do
+  def at(%CharGrid{} = t, coords) do
     t.grid[coords]
   end
 
   @doc "Applies `fun` to each cell in the CharGrid to produce a new CharGrid."
   @spec map(t(), ({coordinates, char} -> char)) :: t()
-  def map(%__MODULE__{} = t, fun) do
+  def map(%CharGrid{} = t, fun) do
     %{t | grid: for({coords, _} = entry <- t.grid, into: %{}, do: {coords, fun.(entry)})}
   end
 
   @doc "Returns the number of cells in the CharGrid for which `fun` returns a truthy value."
   @spec count(t(), ({coordinates, char} -> as_boolean(term))) :: non_neg_integer()
-  def count(%__MODULE__{} = t, fun) do
+  def count(%CharGrid{} = t, fun) do
     Enum.count(t.grid, fun)
   end
 
   @doc "Returns a list of values from the up to 8 cells adjacent to the one at `coords`."
   @spec adjacent_values(t(), coordinates) :: list(char)
-  def adjacent_values(%__MODULE__{} = t, coords) do
+  def adjacent_values(%CharGrid{} = t, coords) do
     @adjacent_deltas
     |> Enum.map(&sum_coordinates(coords, &1))
     |> Enum.map(&at(t, &1))
@@ -75,7 +77,7 @@ defmodule AdventOfCode.CharGrid do
   The optional `empty_char` (default `?.`) dictates which cells are considered unoccupied.
   """
   @spec queen_move_values(t(), coordinates, char) :: list(char)
-  def queen_move_values(%__MODULE__{} = t, coords, empty_char \\ ?.) do
+  def queen_move_values(%CharGrid{} = t, coords, empty_char \\ ?.) do
     @adjacent_deltas
     |> Enum.map(&find_nonempty_on_line(t, &1, sum_coordinates(coords, &1), empty_char))
     |> Enum.reject(&is_nil/1)
