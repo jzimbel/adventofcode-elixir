@@ -1,6 +1,4 @@
 defmodule AdventOfCode.Day04 do
-  @required_keys MapSet.new(~w[byr iyr eyr hgt hcl ecl pid])
-
   def part1(args) do
     args
     |> parse_pass_data()
@@ -31,7 +29,7 @@ defmodule AdventOfCode.Day04 do
   end
 
   defp pass_valid_p1?(pass_keys) do
-    MapSet.subset?(@required_keys, pass_keys)
+    MapSet.subset?(MapSet.new(~w[byr iyr eyr hgt hcl ecl pid]), pass_keys)
   end
 
   ### Part 2 functions
