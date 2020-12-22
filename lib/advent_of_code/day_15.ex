@@ -36,11 +36,11 @@ defmodule AdventOfCode.Day15 do
 
     Stream.concat(
       starting_numbers,
-      Stream.iterate({history, last_number, turn}, &next_number/1)
+      Stream.iterate({history, last_number, turn}, &next_turn/1)
     )
   end
 
-  defp next_number({history, last_number, turn}) do
+  defp next_turn({history, last_number, turn}) do
     next_number =
       case Map.fetch(history, last_number) do
         {:ok, prev_turn} -> turn - 1 - prev_turn
