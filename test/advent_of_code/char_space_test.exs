@@ -42,17 +42,6 @@ defmodule AdventOfCode.CharSpaceTest do
     assert count_chars(result, ?#) == 30
   end
 
-  test "count/2", %{input: input} do
-    char_space = from_input(input)
-
-    result =
-      count(char_space, fn {{x, y, z}, char} ->
-        Integer.is_odd(x) and Integer.is_odd(y) and Integer.is_even(z) and char == ?#
-      end)
-
-    assert result == 2
-  end
-
   test "count_chars/2", %{input: input} do
     char_space = from_input(input)
 

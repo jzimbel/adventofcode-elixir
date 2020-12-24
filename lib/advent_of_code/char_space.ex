@@ -52,24 +52,14 @@ defmodule AdventOfCode.CharSpace do
   end
 
   @doc """
-  Returns the number of cells in the CharSpace for which `fun` returns a truthy value.
-  Counting the number of empty cells is not supported.
-  """
-  @spec count(t(), ({coordinates, char} -> as_boolean(term))) :: non_neg_integer()
-  def count(%T{} = t, fun) do
-    Enum.count(t.grid, fun)
-  end
-
-  @doc """
   Returns the number of cells in the CharSpace containing `char`.
   This returns `:infinity` when passed the CharSpace's empty char.
   """
   @spec count_chars(t(), char) :: non_neg_integer() | :infinity
+  def count_chars(%T{empty_char: empty_char}, empty_char), do: :infinity
+
   def count_chars(%T{} = t, char) do
-    case t.empty_char do
-      ^char -> :infinity
-      _ -> count(t, fn {_, c} -> c == char end)
-    end
+    Enum.count(t.grid, fn {_, c} -> c == char end)
   end
 
   @doc "Returns a list of values from the 26 cells adjacent to the one at `coords`."

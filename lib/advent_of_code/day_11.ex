@@ -13,7 +13,7 @@ defmodule AdventOfCode.Day11 do
     input
     |> CharGrid.from_input()
     |> run_until_stable(map_func_generator)
-    |> CharGrid.count(&match?({_, ?#}, &1))
+    |> CharGrid.count_chars(?#)
   end
 
   defp run_until_stable(grid, map_func_generator) do

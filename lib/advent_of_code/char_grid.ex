@@ -55,10 +55,10 @@ defmodule AdventOfCode.CharGrid do
     %{t | grid: for({coords, _} = entry <- t.grid, into: %{}, do: {coords, fun.(entry)})}
   end
 
-  @doc "Returns the number of cells in the CharGrid for which `fun` returns a truthy value."
-  @spec count(t(), ({coordinates, char} -> as_boolean(term))) :: non_neg_integer()
-  def count(%T{} = t, fun) do
-    Enum.count(t.grid, fun)
+  @doc "Returns the number of cells in the CharGrid containing `char`."
+  @spec count_chars(t(), char) :: non_neg_integer()
+  def count_chars(%T{} = t, char) do
+    Enum.count(t.grid, fn {_, c} -> c == char end)
   end
 
   @doc "Returns a list of values from the up to 8 cells adjacent to the one at `coords`."
