@@ -64,7 +64,7 @@ defmodule AdventOfCode.CharHyperspace do
     Enum.count(t.grid, fn {_, c} -> c == char end)
   end
 
-  @doc "Returns a list of values from the 26 cells adjacent to the one at `coords`."
+  @doc "Returns a list of values from the 80 cells adjacent to the one at `coords`."
   @spec adjacent_values(t(), coordinates) :: list(char)
   def adjacent_values(%T{} = t, coords) do
     @adjacent_deltas
