@@ -1,28 +1,28 @@
 defmodule AdventOfCode.Day17 do
-  alias AdventOfCode.{CharHyperspace, CharSpace}
+  alias AdventOfCode.CharSpace.{FourDim, ThreeDim}
 
   def part1(args) do
-    args
-    |> CharSpace.from_input()
-    |> stream_conway()
-    |> Enum.at(6)
-    |> CharSpace.count_chars(?#)
+    sixth_cycle_active_count(args, ThreeDim)
   end
 
   def part2(args) do
-    args
-    |> CharHyperspace.from_input()
+    sixth_cycle_active_count(args, FourDim)
+  end
+
+  defp sixth_cycle_active_count(input, mod) do
+    input
+    |> mod.from_input()
     |> stream_conway()
     |> Enum.at(6)
-    |> CharHyperspace.count_chars(?#)
+    |> mod.count_chars(?#)
   end
 
   defp stream_conway(grid) do
     Stream.iterate(grid, &next_cycle/1)
   end
 
-  defp next_cycle(%grid_module{} = grid) do
-    grid_module.map(grid, fn
+  defp next_cycle(%mod{} = grid) do
+    mod.map(grid, fn
       {coords, ?#} ->
         if count_adjacent_actives(grid, coords) in 2..3, do: ?#, else: ?.
 
@@ -31,9 +31,9 @@ defmodule AdventOfCode.Day17 do
     end)
   end
 
-  defp count_adjacent_actives(%grid_module{} = grid, coords) do
+  defp count_adjacent_actives(%mod{} = grid, coords) do
     grid
-    |> grid_module.adjacent_values(coords)
+    |> mod.adjacent_values(coords)
     |> Enum.count(&(&1 == ?#))
   end
 end

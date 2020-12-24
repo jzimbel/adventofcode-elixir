@@ -2,7 +2,7 @@ defmodule AdventOfCode.CharSpaceTest do
   use ExUnit.Case
 
   require Integer
-  import AdventOfCode.CharSpace
+  import AdventOfCode.CharSpace.ThreeDim
 
   setup_all do
     [
