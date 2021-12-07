@@ -14,13 +14,14 @@ defmodule AdventOfCode.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :inets]
+      extra_applications: [:logger, :inets, :eex]
     ]
   end
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:httpoison, "~> 1.8"},
       {:benchee, "~> 1.0"}
     ]
   end

@@ -13,9 +13,6 @@ defmodule AdventOfCode.Input do
   cache, it will be retrieved from the server if `allow_network?: true` is
   configured and your cookie is setup.
   """
-  def get!(day, year \\ nil)
-  def get!(day, nil), do: get!(day, default_year())
-
   def get!(day, year) do
     cond do
       in_cache?(day, year) ->
@@ -34,8 +31,6 @@ defmodule AdventOfCode.Input do
   your cache so you can re-fetch it, this will save your bacon.
   Please don't use this to retrieve the input from the server repeatedly!
   """
-  def delete!(day, year \\ nil)
-  def delete!(day, nil), do: delete!(day, default_year())
   def delete!(day, year), do: File.rm!(cache_path(day, year))
 
   defp cache_path(day, year), do: Path.join(cache_dir(), "/#{year}/#{day}.aocinput")
@@ -50,13 +45,10 @@ defmodule AdventOfCode.Input do
   defp from_cache!(day, year), do: File.read!(cache_path(day, year))
 
   defp download!(day, year) do
-    {:ok, {{'HTTP/1.1', 200, 'OK'}, _, input}} =
-      :httpc.request(
-        :get,
-        {'https://adventofcode.com/#{year}/day/#{day}/input', headers()},
-        [],
-        []
-      )
+    HTTPoison.start()
+
+    {:ok, %{status_code: 200, body: input}} =
+      HTTPoison.get("https://adventofcode.com/#{year}/day/#{day}/input", headers())
 
     store_in_cache!(day, year, input)
 
@@ -72,16 +64,9 @@ defmodule AdventOfCode.Input do
     |> Path.expand()
   end
 
-  defp default_year do
-    case :calendar.local_time() do
-      {{y, 12, _}, _} -> y
-      {{y, _, _}, _} -> y - 1
-    end
-  end
-
   defp config, do: Application.get_env(:advent_of_code, __MODULE__)
   defp allow_network?, do: Keyword.get(config(), :allow_network?, false)
 
   defp headers,
-    do: [{'cookie', String.to_charlist("session=" <> Keyword.get(config(), :session_cookie))}]
+    do: [cookie: "session=" <> Keyword.get(config(), :session_cookie)]
 end
