@@ -4,13 +4,15 @@ Solutions and tests for [Advent of Code](https://adventofcode.com/) puzzles.
 
 Built with the [Advent of Code Elixir Starter](https://github.com/mhanberg/advent-of-code-elixir-starter).
 
+Tweaked substantially from there.
+
 ## Usage
 
 Enable the automatic puzzle input downloader by creating a `config/secrets.exs`
 file containing the following:
 
 ```elixir
-use Mix.Config
+import Config
 
 config :advent_of_code, AdventOfCode.Input,
   allow_network?: true,
@@ -22,9 +24,14 @@ Fetch dependencies with
 mix deps.get
 ```
 
+Generate a set of solution and test files for a new year of puzzles with
+```shell
+mix advent.gen -y${YEAR}
+```
+
 Now you can run the solutions with
 ```shell
-mix d${DAY}.p${1 | 2}
+mix advent.solve -d${DAY} -p${1 | 2} [-y${YEAR}] [--bench]
 ```
 
 and tests with
