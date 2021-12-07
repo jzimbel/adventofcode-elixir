@@ -92,7 +92,7 @@ defmodule Mix.Tasks.Advent.Gen do
 
   Mix.Generator.embed_template(:test, """
   defmodule AdventOfCode.Solution.Year<%= @year %>.Day<%= :io_lib.format("~2..0B", [@day]) %>Test do
-    use ExUnit.Case
+    use ExUnit.Case, async: true
 
     import AdventOfCode.Solution.Year<%= @year %>.Day<%= :io_lib.format("~2..0B", [@day]) %>
 

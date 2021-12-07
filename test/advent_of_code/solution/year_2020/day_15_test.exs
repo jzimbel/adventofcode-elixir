@@ -1,5 +1,5 @@
 defmodule AdventOfCode.Solution.Year2020.Day15Test do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   import AdventOfCode.Solution.Year2020.Day15
 
