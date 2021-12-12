@@ -8,7 +8,8 @@ config :advent_of_code, AdventOfCode.Input,
 # a `config/secrets.exs` file like this:
 #
 # config :advent_of_code, AdventOfCode.Input,
-#   advent_of_code_session_cookie: "session=..."
+#   allow_network?: true,
+#   session_cookie: "..."
 
 try do
   import_config "secrets.exs"
