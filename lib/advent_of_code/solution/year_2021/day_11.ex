@@ -113,8 +113,12 @@ defmodule AdventOfCode.Solution.Year2021.Day11.Octopus do
     Agent.stop(agent_name(coords))
   end
 
-  def increment(coords, source) do
-    Agent.cast(agent_name(coords), &do_increment(&1, source))
+  def increment(coords, :tick) do
+    Agent.update(agent_name(coords), &do_increment(&1, :tick))
+  end
+
+  def increment(coords, :flash) do
+    Agent.cast(agent_name(coords), &do_increment(&1, :flash))
   end
 
   def maybe_flash(coords) do
