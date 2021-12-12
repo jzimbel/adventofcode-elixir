@@ -5,7 +5,12 @@ defmodule AdventOfCode.Solution.Year2021.Day11 do
 
   def part1(input) do
     octopuses = setup(input)
-    result = flash_count_after_step(octopuses, 100)
+
+    result =
+      octopuses
+      |> Stream.unfold(&run_step/1)
+      |> Enum.at(99)
+
     teardown(octopuses)
 
     result
@@ -13,7 +18,18 @@ defmodule AdventOfCode.Solution.Year2021.Day11 do
 
   def part2(input) do
     octopuses = setup(input)
-    result = get_first_synchronized_step(octopuses, length(octopuses))
+
+    expected_flashes = length(octopuses)
+
+    result =
+      octopuses
+      |> Stream.unfold(&run_step/1)
+      |> Stream.chunk_every(2, 1)
+      |> Stream.with_index(2)
+      |> Enum.find_value(fn {[flash_count1, flash_count2], step} ->
+        if flash_count2 - flash_count1 == expected_flashes, do: step
+      end)
+
     teardown(octopuses)
 
     result
@@ -39,32 +55,11 @@ defmodule AdventOfCode.Solution.Year2021.Day11 do
     Enum.each(octopuses, &Octopus.stop/1)
   end
 
-  defp flash_count_after_step(octopuses, step, current_step \\ 0)
-
-  defp flash_count_after_step(_, step, step), do: FlashCounter.value()
-
-  defp flash_count_after_step(octopuses, step, current_step) do
-    run_step(octopuses)
-
-    flash_count_after_step(octopuses, step, current_step + 1)
-  end
-
-  defp get_first_synchronized_step(octopuses, expected_flashes, current_step \\ 1) do
-    initial_flash_count = FlashCounter.value()
-    run_step(octopuses)
-    flash_count = FlashCounter.value()
-
-    if flash_count - initial_flash_count == expected_flashes do
-      current_step
-    else
-      get_first_synchronized_step(octopuses, expected_flashes, current_step + 1)
-    end
-  end
-
   defp run_step(octopuses) do
-    Enum.each(octopuses, &Octopus.increment(&1, :tick))
+    Enum.each(octopuses, &Octopus.increment/1)
     Enum.each(octopuses, &Octopus.maybe_flash/1)
     block_until_step_is_done(octopuses)
+    {FlashCounter.value(), octopuses}
   end
 
   defp block_until_step_is_done(octopuses) do
@@ -113,12 +108,12 @@ defmodule AdventOfCode.Solution.Year2021.Day11.Octopus do
     Agent.stop(agent_name(coords))
   end
 
-  def increment(coords, :tick) do
-    Agent.update(agent_name(coords), &do_increment(&1, :tick))
+  def increment(coords) do
+    Agent.update(agent_name(coords), &do_increment/1)
   end
 
-  def increment(coords, :flash) do
-    Agent.cast(agent_name(coords), &do_increment(&1, :flash))
+  def propagate_flash(coords) do
+    Agent.cast(agent_name(coords), &do_propagate_flash/1)
   end
 
   def maybe_flash(coords) do
@@ -126,19 +121,17 @@ defmodule AdventOfCode.Solution.Year2021.Day11.Octopus do
   end
 
   def done?(coords) do
-    Agent.get(agent_name(coords), fn _state -> do_done?() end)
+    Agent.get(agent_name(coords), &do_done?/1)
   end
 
-  defp do_increment(state, source)
-
   # A tick always increments
-  defp do_increment(state, :tick), do: %{state | level: state.level + 1}
+  defp do_increment(state), do: %{state | level: state.level + 1}
 
   # A neighbor's flash has no effect if this octopus has already flashed during this step
-  defp do_increment(%{level: 0} = state, :flash), do: state
+  defp do_propagate_flash(%{level: 0} = state), do: state
 
   # A neighbor's flash increments and may cause this octopus to flash
-  defp do_increment(state, :flash) do
+  defp do_propagate_flash(state) do
     do_maybe_flash(%{state | level: state.level + 1})
   end
 
@@ -151,10 +144,10 @@ defmodule AdventOfCode.Solution.Year2021.Day11.Octopus do
 
   defp flash(neighbors) do
     FlashCounter.increment()
-    Enum.each(neighbors, &increment(&1, :flash))
+    Enum.each(neighbors, &propagate_flash/1)
   end
 
-  defp do_done? do
+  defp do_done?(_state) do
     match?({:messages, []}, Process.info(self(), :messages))
   end
 
