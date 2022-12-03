@@ -6,21 +6,33 @@ defmodule AdventOfCode.Solution.Year2022.Day01Test do
   setup do
     [
       input: """
+      1000
+      2000
+      3000
+
+      4000
+
+      5000
+      6000
+
+      7000
+      8000
+      9000
+
+      10000
       """
     ]
   end
 
-  @tag :skip
   test "part1", %{input: input} do
     result = part1(input)
 
-    assert result
+    assert result == 24000
   end
 
-  @tag :skip
   test "part2", %{input: input} do
     result = part2(input)
 
-    assert result
+    assert result == 45000
   end
 end
