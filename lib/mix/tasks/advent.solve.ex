@@ -113,14 +113,24 @@ defmodule Mix.Tasks.Advent.Solve do
   defp print_solution(shell, solution, opts) do
     tap(shell, fn s ->
       solution
-      |> inspect()
-      |> then(
-        &case opts[:label] do
-          nil -> &1
-          label -> "#{label}: #{&1}"
-        end
-      )
+      |> format()
+      |> highlight()
+      |> label(opts[:label])
       |> s.info()
     end)
   end
+
+  defp format(solution) when is_binary(solution) do
+    if String.contains?(solution, "\n"), do: [?\n, solution], else: solution
+  end
+
+  defp format(solution), do: inspect(solution)
+
+  defp highlight(message) do
+    [IO.ANSI.bright(), IO.ANSI.green(), message, IO.ANSI.reset()]
+  end
+
+  defp label(message, nil), do: message
+
+  defp label(message, label), do: [label, ': ', message]
 end
