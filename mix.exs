@@ -22,7 +22,8 @@ defmodule AdventOfCode.MixProject do
   defp deps do
     [
       {:httpoison, "~> 1.8"},
-      {:benchee, "~> 1.0"}
+      {:benchee, "~> 1.0"},
+      {:libgraph, "~> 0.13.3"}
     ]
   end
 end
