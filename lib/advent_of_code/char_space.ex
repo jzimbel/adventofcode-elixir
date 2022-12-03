@@ -39,6 +39,17 @@ defmodule AdventOfCode.CharSpace do
         update(%T{empty_char: empty_char}, grid)
       end
 
+      @doc "Creates a new #{@mod_short_name} from a list of {x, y} coordinates of non-empty cells."
+      @spec from_coords_list(list({integer, integer}), char, char) :: t()
+      def from_coords_list(coords_list, non_empty_char \\ ?#, empty_char \\ ?.) do
+        grid =
+          for {x, y} <- coords_list,
+              into: %{},
+              do: {@dim_mod.new_coords(x, y), non_empty_char}
+
+        update(%T{empty_char: empty_char}, grid)
+      end
+
       @doc "Gets the value at the given coordinates."
       @spec at(t(), coordinates) :: char
       def at(%T{} = t, coords) do
