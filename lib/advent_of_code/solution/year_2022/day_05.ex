@@ -1,24 +1,23 @@
 defmodule AdventOfCode.Solution.Year2022.Day05 do
-  def part1(input), do: solve(input, with_reversing: true)
-  def part2(input), do: solve(input, with_reversing: false)
+  def part1(input), do: solve(input, &Enum.reverse/1)
+  def part2(input), do: solve(input, &Function.identity/1)
 
-  def solve(input, with_reversing: with_reversing) do
+  def solve(input, crane_fn) do
     {stacks, instrs} = parse(input)
 
     instrs
-    |> Enum.reduce(stacks, &move(&1, &2, reverse: with_reversing))
+    |> Enum.reduce(stacks, &move(&1, &2, crane_fn))
     |> Enum.sort_by(fn {stack_label, _stack} -> stack_label end)
     |> Enum.map(fn {_stack_label, [crate | _]} -> crate end)
     |> to_string()
   end
 
-  defp move({source, dest, count}, stacks, reverse: reverse) do
+  defp move({source, dest, count}, stacks, crane_fn) do
     {to_move, to_remain} = Enum.split(stacks[source], count)
-    to_move = if(reverse, do: Enum.reverse(to_move), else: to_move)
 
     stacks
     |> Map.put(source, to_remain)
-    |> Map.update!(dest, &Enum.concat(to_move, &1))
+    |> Map.update!(dest, &Enum.concat(crane_fn.(to_move), &1))
   end
 
   defp parse(input) do
@@ -47,7 +46,7 @@ defmodule AdventOfCode.Solution.Year2022.Day05 do
     |> Enum.drop(1)
     |> Enum.take_every(4)
     |> Enum.with_index(fn crate, i -> {i + 1, [crate]} end)
-    |> Enum.reject(&match?({_stack_label, [?\s]}, &1))
+    |> Enum.reject(&match?({_stack_label, ' '}, &1))
     |> Map.new()
   end
 
