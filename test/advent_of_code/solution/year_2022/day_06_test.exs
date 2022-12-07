@@ -5,22 +5,19 @@ defmodule AdventOfCode.Solution.Year2022.Day06Test do
 
   setup do
     [
-      input: """
-      """
+      input: "bvwbjplbgvbhsrlpgdmjqwftvncz"
     ]
   end
 
-  @tag :skip
   test "part1", %{input: input} do
     result = part1(input)
 
-    assert result
+    assert result == 5
   end
 
-  @tag :skip
   test "part2", %{input: input} do
     result = part2(input)
 
-    assert result
+    assert result == 23
   end
 end
