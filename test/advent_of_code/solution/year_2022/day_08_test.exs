@@ -6,21 +6,24 @@ defmodule AdventOfCode.Solution.Year2022.Day08Test do
   setup do
     [
       input: """
+      30373
+      25512
+      65332
+      33549
+      35390
       """
     ]
   end
 
-  @tag :skip
   test "part1", %{input: input} do
     result = part1(input)
 
-    assert result
+    assert result == 21
   end
 
-  @tag :skip
   test "part2", %{input: input} do
     result = part2(input)
 
-    assert result
+    assert result == 8
   end
 end

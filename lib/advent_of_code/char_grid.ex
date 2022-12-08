@@ -150,6 +150,65 @@ defmodule AdventOfCode.CharGrid do
   end
 
   @doc """
+  Returns a list of lists of cells in lines from the one at `coords`.
+  Each list starts with the cell nearest `coords`, and radiates outward.
+
+  The type of adjacency is determined by the third argument:
+
+  - `:all` (default behavior):
+    ```
+    O.O.O
+    .OOO.
+    OO*OO
+    .OOO.
+    O.O.O
+    ```
+  - `:cardinal`:
+    ```
+    ..O..
+    ..O..
+    OO*OO
+    ..O..
+    ..O..
+    ```
+  - `:intercardinal`:
+    ```
+    O...O
+    .O.O.
+    ..*..
+    .O.O.
+    O...O
+    ```
+  """
+  @spec lines_of_cells(t(), coordinates, adjacency_type) :: list(list(cell))
+  def lines_of_cells(%T{} = t, coords, adjacency_type \\ :all) do
+    @adjacency_deltas_by_type[adjacency_type]
+    |> Enum.map(&get_line_of_cells(t, &1, sum_coordinates(coords, &1)))
+  end
+
+  @doc """
+  Convenience function that behaves the same as `lines_of_cells/3`,
+  but returns only the char value of each cell.
+  """
+  @spec lines_of_values(t(), coordinates, adjacency_type) :: list(list(char))
+  def lines_of_values(%T{} = t, coords, adjacency_type \\ :all) do
+    t
+    |> lines_of_cells(coords, adjacency_type)
+    |> Enum.map(fn line -> Enum.map(line, &elem(&1, 1)) end)
+  end
+
+  @doc """
+  Convenience function that behaves the same as `lines_of_cells/3`,
+  but returns only the coordinates of each cell.
+  """
+  @spec lines_of_coords(t(), coordinates, adjacency_type) :: list(list(coordinates))
+  def lines_of_coords(%T{} = t, coords, adjacency_type \\ :all) do
+    t
+    |> lines_of_cells(coords, adjacency_type)
+    |> Enum.map(fn line -> Enum.map(line, &elem(&1, 0)) end)
+  end
+
+  @doc """
   Returns a list of values from the up to 8 cells reachable by a chess queen's move from the
   cell at `coords`.
 
@@ -160,6 +219,13 @@ defmodule AdventOfCode.CharGrid do
     @all_adjacent_deltas
     |> Enum.map(&find_nonempty_on_line(t, &1, sum_coordinates(coords, &1), empty_char))
     |> Enum.reject(&is_nil/1)
+  end
+
+  defp get_line_of_cells(t, step, coords) do
+    case at(t, coords) do
+      nil -> []
+      val -> [{coords, val} | get_line_of_cells(t, step, sum_coordinates(coords, step))]
+    end
   end
 
   defp find_nonempty_on_line(t, step, coords, empty_char) do
