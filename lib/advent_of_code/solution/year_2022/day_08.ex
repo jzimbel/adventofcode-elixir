@@ -2,35 +2,26 @@ defmodule AdventOfCode.Solution.Year2022.Day08 do
   alias AdventOfCode.CharGrid
 
   def part1(input) do
-    {grid, sight_lines_by_tree} = parse(input)
-
-    interior_visible_count = Enum.count(sight_lines_by_tree, &visible?/1)
-    perimeter_tree_count = 2 * grid.width + 2 * (grid.height - 2)
-
-    interior_visible_count + perimeter_tree_count
+    input
+    |> parse_sight_lines_by_tree()
+    |> Enum.count(&visible?/1)
   end
 
   def part2(input) do
-    {_grid, sight_lines_by_tree} = parse(input)
-
-    sight_lines_by_tree
+    input
+    |> parse_sight_lines_by_tree()
     |> Enum.map(&scenic_score/1)
     |> Enum.max()
   end
 
-  defp parse(input) do
+  defp parse_sight_lines_by_tree(input) do
     grid = CharGrid.from_input(input)
 
-    sight_lines_by_tree =
-      for(
-        # Trees on the perimeter are excluded
-        x <- 1..(grid.width - 2)//1,
-        y <- 1..(grid.height - 2)//1,
-        do: {x, y}
-      )
-      |> Enum.map(&{CharGrid.at(grid, &1), CharGrid.lines_of_values(grid, &1, :cardinal)})
-
-    {grid, sight_lines_by_tree}
+    grid
+    |> CharGrid.to_list()
+    |> Enum.map(fn {coords, tree} ->
+      {tree, CharGrid.lines_of_values(grid, coords, :cardinal)}
+    end)
   end
 
   defp visible?({tree, sight_lines}) do
