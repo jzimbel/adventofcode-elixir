@@ -66,7 +66,7 @@ defmodule AdventOfCode.CharGrid do
   @doc "Applies `fun` to each cell to produce a new CharGrid. `fun` must return a char."
   @spec map(t(), (cell -> char)) :: t()
   def map(%T{} = t, fun) do
-    %{t | grid: for({coords, _} = cell <- t.grid, into: %{}, do: {coords, fun.(cell)})}
+    %{t | grid: Map.new(t.grid, fn {coords, _} = cell -> {coords, fun.(cell)} end)}
   end
 
   @doc "Converts the grid to a list of cells."
