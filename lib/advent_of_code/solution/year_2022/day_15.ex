@@ -12,7 +12,7 @@ defmodule AdventOfCode.Solution.Year2022.Day15 do
     MapSet.size(MapSet.difference(in_line, exceptions))
   end
 
-  def part2(input, search \\ 4_000_000) do
+  def part2(_input, _search \\ 4_000_000) do
   end
 
   defp parse(input) do
@@ -38,6 +38,4 @@ defmodule AdventOfCode.Solution.Year2022.Day15 do
   defp dist({x, y}, {x2, y2}) do
     abs(x2 - x) + abs(y2 - y)
   end
-
-  defp tuning_frequency({x, y}), do: x * 4_000_000 + y
 end
