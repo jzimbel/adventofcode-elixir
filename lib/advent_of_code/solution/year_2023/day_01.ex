@@ -1,16 +1,14 @@
 defmodule AdventOfCode.Solution.Year2023.Day01 do
-  def part1(input) do
+  def part1(input), do: solve(input, &digits_part1/1)
+
+  def part2(input), do: solve(input, &digits_part2/1)
+
+  defp solve(input, get_digits_fn) do
     input
     |> String.split("\n", trim: true)
     |> Enum.map(fn line ->
       line
-      |> String.graphemes()
-      |> Enum.flat_map(fn c ->
-        case Integer.parse(c) do
-          {n, ""} -> [n]
-          _ -> []
-        end
-      end)
+      |> get_digits_fn.()
       |> then(fn digits ->
         [List.first(digits), List.last(digits)]
         |> Integer.undigits()
@@ -19,41 +17,39 @@ defmodule AdventOfCode.Solution.Year2023.Day01 do
     |> Enum.sum()
   end
 
-  def part2(input) do
-    input
-    |> String.split("\n", trim: true)
-    |> Enum.map(&do_it/1)
-    |> Enum.sum()
+  defp digits_part1(line, acc \\ [])
+
+  defp digits_part1("", acc), do: Enum.reverse(acc)
+
+  defp digits_part1(<<n, rest::binary>>, acc) when n in ?0..?9 do
+    digits_part1(rest, [n - ?0 | acc])
   end
 
-  defp do_it(line, acc \\ [])
-
-  defp do_it("", acc) do
-    acc
-    |> Enum.reverse()
-    |> then(fn digits ->
-      [List.first(digits), List.last(digits)]
-      |> Integer.undigits()
-    end)
+  defp digits_part1(<<_, rest::binary>>, acc) do
+    digits_part1(rest, acc)
   end
 
-  defp do_it(<<n, rest::binary>>, acc) when n in ?0..?9 do
-    do_it(rest, [n - ?0 | acc])
+  ###
+
+  defp digits_part2(line, acc \\ [])
+
+  defp digits_part2("", acc), do: Enum.reverse(acc)
+
+  defp digits_part2(<<n, rest::binary>>, acc) when n in ?0..?9 do
+    digits_part2(rest, [n - ?0 | acc])
   end
 
-  defp do_it(line, acc) do
-    case lookup(line) do
-      {:ok, n, _char_count} ->
-        <<_, rest::binary>> = line
-        do_it(rest, [n | acc])
+  defp digits_part2(<<_, rest::binary>> = line, acc) do
+    acc =
+      case lookup(line) do
+        {:ok, digit} -> [digit | acc]
+        :error -> acc
+      end
 
-      :error ->
-        <<_, rest::binary>> = line
-        do_it(rest, acc)
-    end
+    digits_part2(rest, acc)
   end
 
-  @spelled_out %{
+  spelled_out = %{
     "one" => 1,
     "two" => 2,
     "three" => 3,
@@ -65,10 +61,8 @@ defmodule AdventOfCode.Solution.Year2023.Day01 do
     "nine" => 9
   }
 
-  for {str, n} <- @spelled_out do
-    char_count = String.length(str)
-
-    defp lookup(unquote(str) <> _), do: {:ok, unquote(n), unquote(char_count)}
+  for {str, n} <- spelled_out do
+    defp lookup(unquote(str) <> _), do: {:ok, unquote(n)}
   end
 
   defp lookup(_), do: :error
