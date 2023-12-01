@@ -36,11 +36,10 @@ defmodule AdventOfCode.Solution.Year2023.Day01 do
   defp find_digit_part1(_), do: :error
 
   defp find_digit_part2(<<char, _::binary>>) when is_digit(char), do: {:ok, char - ?0}
-  defp find_digit_part2(str), do: find_leading_word_digit(str)
 
   for {str, n} <- Enum.zip(~w[one two three four five six seven eight nine], 1..9) do
-    defp find_leading_word_digit(unquote(str) <> _), do: {:ok, unquote(n)}
+    defp find_digit_part2(<<unquote(str), _::binary>>), do: {:ok, unquote(n)}
   end
 
-  defp find_leading_word_digit(_), do: :error
+  defp find_digit_part2(_), do: :error
 end
