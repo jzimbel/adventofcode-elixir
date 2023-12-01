@@ -27,3 +27,6 @@ advent_of_code_2018-*.tar
 
 # VSCode workspace file
 *.code-workspace
+
+# Detritus left behind by macOS Finder
+.DS_Store
