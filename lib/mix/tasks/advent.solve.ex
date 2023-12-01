@@ -33,7 +33,7 @@ defmodule Mix.Tasks.Advent.Solve do
       input = AdventOfCode.Input.get!(args.day, args.year)
 
       if args.bench do
-        Benchee.run(%{result: fn -> solution_fn.(input) end})
+        Benchee.run(%{result: fn -> solution_fn.(input) end}, print: [configuration: false])
       else
         input
         |> solution_fn.()
