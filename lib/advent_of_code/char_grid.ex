@@ -57,6 +57,52 @@ defmodule AdventOfCode.CharGrid do
     }
   end
 
+  @doc """
+  Creates a CharGrid from a list of cell values.
+
+  By default, an exception will be raised if `cells` is sparse--that is, if it is
+  missing one or more entries within the bounding box of x=0..max(x_coords), y=0..max(y_coords).
+
+  Pass a 0-arity function as a second arg if you want missing entries to be filled
+  in with a default char value. E.g. `fn -> ?. end`.
+  """
+  @spec from_cells(list(cell)) :: t()
+  @spec from_cells(list(cell), (() -> char)) :: t()
+  def from_cells(cells, default_fn \\ fn -> raise "`CharGrid.from_cells`: missing coords" end) do
+    width = Stream.map(cells, &elem(elem(&1, 0), 0)) |> Enum.max()
+    height = Stream.map(cells, &elem(elem(&1, 0), 1)) |> Enum.max()
+    tentative_grid = Map.new(cells)
+
+    grid =
+      for x <- 0..(width - 1)//1,
+          y <- 0..(height - 1)//1,
+          into: %{} do
+        {{x, y}, Map.get_lazy(tentative_grid, {x, y}, default_fn)}
+      end
+
+    %T{grid: grid, width: width, height: height}
+  end
+
+  @doc "Returns all cells in the grid, grouped into rows starting from the top."
+  @spec rows(t()) :: list(list(cell))
+  def rows(%T{} = t) do
+    for y <- 0..(t.height - 1)//1 do
+      for x <- 0..(t.width - 1)//1 do
+        {{x, y}, t.grid[{x, y}]}
+      end
+    end
+  end
+
+  @doc "Returns all cells in the grid, grouped into columns starting from the left."
+  @spec cols(t()) :: list(list(cell))
+  def cols(%T{} = t) do
+    for x <- 0..(t.width - 1)//1 do
+      for y <- 0..(t.height - 1)//1 do
+        {{x, y}, t.grid[{x, y}]}
+      end
+    end
+  end
+
   @doc "Gets the value at the given coordinates."
   @spec at(t(), coordinates) :: char | nil
   def at(%T{} = t, coords) do
