@@ -1,22 +1,27 @@
 {
 	"name": "Elixir",
 	"build": {
-		"dockerfile": "Dockerfile",
+		"dockerfile": "Dockerfile"
 	},
 	// "workspaceFolder": "/workspace",
 	// Set *default* container specific settings.json values on container create.
-	"settings": {
-		"terminal.integrated.profiles.linux": {
-			"zsh": {
-				"path": "/bin/zsh"
-			}
-		},
-		"terminal.integrated.defaultProfile.linux": "zsh"
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"terminal.integrated.profiles.linux": {
+					"zsh": {
+						"path": "/bin/zsh"
+					}
+				},
+				"terminal.integrated.defaultProfile.linux": "zsh"
+			},
+			"extensions": [
+				"JakeBecker.elixir-ls",
+				"dogweather.byespec"
+			]
+		}
 	},
 	// Add the IDs of extensions you want installed when the container is created.
-	"extensions": [
-		"jakebecker.elixir-ls"
-	],
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [4000, 4001],
 	// Use 'postCreateCommand' to run commands after the container is created.
