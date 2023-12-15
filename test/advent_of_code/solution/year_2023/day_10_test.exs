@@ -6,11 +6,15 @@ defmodule AdventOfCode.Solution.Year2023.Day10Test do
   setup do
     [
       input: """
+      7-F7-
+      .FJ|7
+      SJLL7
+      |F--J
+      LJ.LJ
       """
     ]
   end
 
-  @tag :skip
   test "part1", %{input: input} do
     result = part1(input)
 
