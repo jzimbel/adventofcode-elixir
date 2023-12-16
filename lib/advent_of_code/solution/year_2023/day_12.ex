@@ -1,5 +1,5 @@
 defmodule AdventOfCode.Solution.Year2023.Day12 do
-  @table __MODULE__.MemoTable
+  @memo __MODULE__.MemoTable
 
   def part1(input) do
     input
@@ -17,7 +17,7 @@ defmodule AdventOfCode.Solution.Year2023.Day12 do
   end
 
   defp solve(parsed_lines) do
-    :ets.new(@table, [
+    :ets.new(@memo, [
       :named_table,
       :public,
       read_concurrency: true,
@@ -30,7 +30,7 @@ defmodule AdventOfCode.Solution.Year2023.Day12 do
     |> Stream.map(fn {:ok, count} -> count end)
     |> Enum.sum()
   after
-    :ets.delete(@table)
+    :ets.delete(@memo)
   end
 
   defp quintuple({pat, sizes}) do
@@ -38,7 +38,12 @@ defmodule AdventOfCode.Solution.Year2023.Day12 do
   end
 
   defp count_arrangements(pat, sizes, offset \\ 0) do
-    memo({pat, sizes, offset}, fn -> do_count(pat, sizes, offset) end)
+    key = {pat, sizes, offset}
+
+    case :ets.match(@memo, {key, :"$1"}) do
+      [[value]] -> value
+      [] -> tap(do_count(pat, sizes, offset), &:ets.insert(@memo, {key, &1}))
+    end
   end
 
   defp do_count(pat, [size | _], offset) when byte_size(pat) - offset < size, do: 0
@@ -67,13 +72,6 @@ defmodule AdventOfCode.Solution.Year2023.Day12 do
   end
 
   defp end_scope(pat, offset), do: {byte_size(pat), offset - byte_size(pat)}
-
-  defp memo(key, fun) do
-    case :ets.match(@table, {key, :"$1"}) do
-      [[value]] -> value
-      [] -> tap(fun.(), &:ets.insert(@table, {key, &1}))
-    end
-  end
 
   defp parse_line(line) do
     [springs_str, sizes_str] = String.split(line)
