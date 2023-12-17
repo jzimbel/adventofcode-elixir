@@ -1,5 +1,5 @@
 defmodule AdventOfCode.Solution.Year2022.Day08 do
-  alias AdventOfCode.CharGrid
+  alias AdventOfCode.Grid
 
   def part1(input) do
     input
@@ -15,12 +15,12 @@ defmodule AdventOfCode.Solution.Year2022.Day08 do
   end
 
   defp parse_sight_lines_by_tree(input) do
-    grid = CharGrid.from_input(input)
+    grid = Grid.from_input(input)
 
     grid
-    |> CharGrid.to_list()
+    |> Grid.to_list()
     |> Enum.map(fn {coords, tree} ->
-      {tree, CharGrid.lines_of_values(grid, coords, :cardinal)}
+      {tree, Grid.lines_of_values(grid, coords, :cardinal)}
     end)
   end
 

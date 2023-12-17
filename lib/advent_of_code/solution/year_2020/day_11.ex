@@ -1,19 +1,19 @@
 defmodule AdventOfCode.Solution.Year2020.Day11 do
-  alias AdventOfCode.CharGrid
+  alias AdventOfCode.Grid
 
   def part1(args) do
-    count_occupied(args, fn grid -> grid_mapper(grid, &CharGrid.adjacent_values/2, 4) end)
+    count_occupied(args, fn grid -> grid_mapper(grid, &Grid.adjacent_values/2, 4) end)
   end
 
   def part2(args) do
-    count_occupied(args, fn grid -> grid_mapper(grid, &CharGrid.queen_move_values/2, 5) end)
+    count_occupied(args, fn grid -> grid_mapper(grid, &Grid.queen_move_values/2, 5) end)
   end
 
   defp count_occupied(input, map_func_generator) do
     input
-    |> CharGrid.from_input()
+    |> Grid.from_input()
     |> run_until_stable(map_func_generator)
-    |> CharGrid.count_chars(?#)
+    |> Grid.count_values(?#)
   end
 
   defp run_until_stable(grid, map_func_generator) do
@@ -24,7 +24,7 @@ defmodule AdventOfCode.Solution.Year2020.Day11 do
 
   defp run_until_stable(grid, _, map_func_generator) do
     grid
-    |> CharGrid.map(map_func_generator.(grid))
+    |> Grid.map(map_func_generator.(grid))
     |> run_until_stable(grid, map_func_generator)
   end
 

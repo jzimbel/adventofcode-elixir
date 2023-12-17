@@ -1,5 +1,5 @@
 defmodule AdventOfCode.Solution.Year2023.Day11 do
-  alias AdventOfCode.CharGrid, as: G
+  alias AdventOfCode.Grid, as: G
 
   def part1(input), do: solve(input, 1)
   def part2(input), do: solve(input, 999_999)

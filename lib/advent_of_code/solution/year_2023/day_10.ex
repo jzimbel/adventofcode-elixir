@@ -1,5 +1,5 @@
 defmodule AdventOfCode.Solution.Year2023.Day10 do
-  alias AdventOfCode.CharGrid, as: G
+  alias AdventOfCode.Grid, as: G
 
   @enforce_keys [:coords, :heading]
   defstruct @enforce_keys

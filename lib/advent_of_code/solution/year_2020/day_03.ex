@@ -1,8 +1,8 @@
 defmodule AdventOfCode.Solution.Year2020.Day03 do
-  alias AdventOfCode.CharGrid
+  alias AdventOfCode.Grid
 
   def part1(args) do
-    grid = CharGrid.from_input(args)
+    grid = Grid.from_input(args)
 
     run(grid, {3, 1})
   end
@@ -10,7 +10,7 @@ defmodule AdventOfCode.Solution.Year2020.Day03 do
   @part2_slopes [{1, 1}, {3, 1}, {5, 1}, {7, 1}, {1, 2}]
 
   def part2(args) do
-    grid = CharGrid.from_input(args)
+    grid = Grid.from_input(args)
 
     @part2_slopes
     |> Enum.map(&run(grid, &1))
@@ -27,7 +27,7 @@ defmodule AdventOfCode.Solution.Year2020.Day03 do
 
   defp loop(grid, {x_inc, y_inc} = slope, {x, y, tree_count}) do
     new_count =
-      case CharGrid.at(grid, {x, y}) do
+      case Grid.at(grid, {x, y}) do
         ?# -> tree_count + 1
         ?. -> tree_count
       end

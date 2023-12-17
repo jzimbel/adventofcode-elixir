@@ -1,16 +1,16 @@
 defmodule AdventOfCode.Solution.Year2021.Day09 do
-  alias AdventOfCode.CharGrid
+  alias AdventOfCode.Grid
 
   def part1(input) do
     input
-    |> CharGrid.from_input()
+    |> Grid.from_input()
     |> local_minima_risk_levels()
     |> Enum.sum()
   end
 
   def part2(input) do
     input
-    |> CharGrid.from_input()
+    |> Grid.from_input()
     |> get_basins()
     |> Enum.map(&MapSet.size/1)
     |> Enum.sort(:desc)
@@ -20,9 +20,9 @@ defmodule AdventOfCode.Solution.Year2021.Day09 do
 
   defp local_minima_risk_levels(grid) do
     grid
-    |> CharGrid.filter_cells(fn {coords, value} ->
+    |> Grid.filter_cells(fn {coords, value} ->
       grid
-      |> CharGrid.adjacent_values(coords)
+      |> Grid.adjacent_values(coords)
       |> Enum.all?(&(value < &1))
     end)
     # codepoint for '0' (aka ?0 in Elixir syntax) == 48;
@@ -32,12 +32,12 @@ defmodule AdventOfCode.Solution.Year2021.Day09 do
 
   defp get_basins(grid) do
     grid
-    |> CharGrid.to_list()
+    |> Grid.to_list()
     |> non_nine_coords()
     |> Enum.map(fn coords ->
       adjacent_non_nines =
         grid
-        |> CharGrid.adjacent_cells(coords, :cardinal)
+        |> Grid.adjacent_cells(coords, :cardinal)
         |> non_nine_coords()
 
       MapSet.new([coords | adjacent_non_nines])

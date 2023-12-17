@@ -1,17 +1,17 @@
 defmodule AdventOfCode.Solution.Year2021.Day15 do
-  alias AdventOfCode.CharGrid
+  alias AdventOfCode.Grid
   alias Graph
 
   def part1(input) do
     input
-    |> CharGrid.from_input()
+    |> Grid.from_input()
     |> make_numeric()
     |> shortest_path_weight()
   end
 
   def part2(input) do
     input
-    |> CharGrid.from_input()
+    |> Grid.from_input()
     |> make_numeric()
     |> embiggen()
     |> shortest_path_weight()
@@ -22,7 +22,7 @@ defmodule AdventOfCode.Solution.Year2021.Day15 do
     |> build_graph()
     |> Graph.dijkstra({0, 0}, {grid.width - 1, grid.height - 1})
     |> Enum.drop(1)
-    |> Enum.map(&CharGrid.at(grid, &1))
+    |> Enum.map(&Grid.at(grid, &1))
     |> Enum.sum()
   end
 
@@ -31,7 +31,7 @@ defmodule AdventOfCode.Solution.Year2021.Day15 do
     |> Graph.add_edges(
       Stream.flat_map(grid.grid, fn {coords, _} ->
         grid
-        |> CharGrid.adjacent_cells(coords, :cardinal)
+        |> Grid.adjacent_cells(coords, :cardinal)
         |> Enum.map(fn {neighbor_coords, neighbor_value} ->
           {coords, neighbor_coords, weight: neighbor_value}
         end)
@@ -41,7 +41,7 @@ defmodule AdventOfCode.Solution.Year2021.Day15 do
 
   defp embiggen(grid) do
     grid
-    |> CharGrid.to_list()
+    |> Grid.to_list()
     |> Stream.flat_map(fn {{x, y}, value} ->
       for x_offset <- 0..4,
           y_offset <- 0..4 do
@@ -51,10 +51,10 @@ defmodule AdventOfCode.Solution.Year2021.Day15 do
         }
       end
     end)
-    |> then(&%CharGrid{grid: Enum.into(&1, %{}), width: grid.width * 5, height: grid.height * 5})
+    |> then(&%Grid{grid: Enum.into(&1, %{}), width: grid.width * 5, height: grid.height * 5})
   end
 
   defp make_numeric(grid) do
-    CharGrid.map(grid, fn {_, char_value} -> char_value - ?0 end)
+    Grid.map(grid, fn {_, char_value} -> char_value - ?0 end)
   end
 end

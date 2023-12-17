@@ -1,5 +1,5 @@
 defmodule AdventOfCode.Solution.Year2021.Day11 do
-  alias AdventOfCode.CharGrid
+  alias AdventOfCode.Grid
   alias __MODULE__.FlashCounter
   alias __MODULE__.Octopus
 
@@ -38,13 +38,13 @@ defmodule AdventOfCode.Solution.Year2021.Day11 do
   defp setup(input) do
     FlashCounter.start_link()
 
-    grid = CharGrid.from_input(input)
+    grid = Grid.from_input(input)
 
     grid
-    |> CharGrid.to_list()
+    |> Grid.to_list()
     |> tap(fn cells ->
       Enum.each(cells, fn {coords, level_char} ->
-        Octopus.start_link(coords, level_char - ?0, CharGrid.adjacent_coords(grid, coords))
+        Octopus.start_link(coords, level_char - ?0, Grid.adjacent_coords(grid, coords))
       end)
     end)
     |> Enum.map(fn {coords, _} -> coords end)
