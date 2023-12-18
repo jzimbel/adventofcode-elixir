@@ -109,8 +109,9 @@ defmodule AdventOfCode.Grid do
 
   @doc "Gets the value at the given coordinates."
   @spec at(t(a), coordinates) :: a | nil when a: var
-  def at(%T{} = t, coords) do
-    t.grid[coords]
+  @spec at(t(a), coordinates, default) :: a | default when a: var, default: var
+  def at(%T{} = t, coords, default \\ nil) do
+    Map.get(t.grid, coords, default)
   end
 
   @doc "Applies `fun` to each cell to produce a new Grid."
