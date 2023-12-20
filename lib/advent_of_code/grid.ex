@@ -18,6 +18,9 @@ defmodule AdventOfCode.Grid do
   @type cell(a) :: {coordinates, a}
   @type cell :: cell(term)
 
+  @type adjacency_type :: :all | :cardinal | :intercardinal | :up
+  @type heading :: :n | :e | :s | :w | :ne | :se | :sw | :nw
+
   @enforce_keys ~w[grid width height]a
   defstruct @enforce_keys
 
@@ -34,6 +37,17 @@ defmodule AdventOfCode.Grid do
     all: @all_adjacent_deltas,
     cardinal: @cardinal_adjacent_deltas,
     intercardinal: @intercardinal_adjacent_deltas
+  }
+
+  @headings_by_type %{
+    n: {0, -1},
+    e: {1, 0},
+    s: {0, 1},
+    w: {-1, 0},
+    ne: {1, -1},
+    se: {1, 1},
+    sw: {-1, 1},
+    nw: {-1, -1}
   }
 
   @spec from_input(String.t()) :: t(char)
@@ -87,6 +101,52 @@ defmodule AdventOfCode.Grid do
     %T{grid: grid, width: width, height: height}
   end
 
+  @doc """
+  Creates a Grid from a list of lists of values.
+
+  Each list within `cols` represents a column.
+  `cols[0][0]` holds the value for cell `{0,0}`, `cols[3][1]` for cell `{3,1}`, and so on.
+
+  You do not need to supply coordinates.
+  Coordinates for each value are determined from its position within the 2D list.
+  """
+  @spec from_cols(list(list(a))) :: t(a) when a: var
+  def from_cols(cols) do
+    width = length(cols)
+    height = length(hd(cols))
+
+    grid =
+      for {col, x} <- Enum.with_index(cols),
+          {value, y} <- Enum.with_index(col),
+          into: %{},
+          do: {{x, y}, value}
+
+    %T{grid: grid, width: width, height: height}
+  end
+
+  @doc """
+  Creates a Grid from a list of lists of values.
+
+  Each list within `rows` represents a row.
+  `rows[0][0]` holds the value for cell `{0,0}`, `rows[3][1]` for cell `{1,3}`, and so on.
+
+  You do not need to supply coordinates.
+  Coordinates for each value are determined from its position within the 2D list.
+  """
+  @spec from_rows(list(list(a))) :: t(a) when a: var
+  def from_rows(rows) do
+    width = length(hd(rows))
+    height = length(rows)
+
+    grid =
+      for {row, y} <- Enum.with_index(rows),
+          {value, x} <- Enum.with_index(row),
+          into: %{},
+          do: {{x, y}, value}
+
+    %T{grid: grid, width: width, height: height}
+  end
+
   @doc "Returns all cells in the grid, grouped into rows starting from the top."
   @spec rows(t(a)) :: list(list(cell(a))) when a: var
   def rows(%T{} = t) do
@@ -112,6 +172,14 @@ defmodule AdventOfCode.Grid do
   @spec at(t(a), coordinates, default) :: a | default when a: var, default: var
   def at(%T{} = t, coords, default \\ nil) do
     Map.get(t.grid, coords, default)
+  end
+
+  @doc """
+  Swaps the values of the cells with the two given coordinate pairs.
+  """
+  @spec swap_cells(t(a), coordinates, coordinates) :: t(a) when a: var
+  def swap_cells(%T{} = t, coords1, coords2) do
+    update_in(t.grid, &%{&1 | coords1 => &1[coords2], coords2 => &1[coords1]})
   end
 
   @doc "Applies `fun` to each cell to produce a new Grid."
@@ -143,8 +211,6 @@ defmodule AdventOfCode.Grid do
   def filter_cells(%T{} = t, predicate) do
     Enum.filter(t.grid, predicate)
   end
-
-  @type adjacency_type :: :all | :cardinal | :intercardinal
 
   @doc """
   Returns a list of cells adjacent to the one at `coords`.
@@ -198,6 +264,16 @@ defmodule AdventOfCode.Grid do
     t
     |> adjacent_cells(coords, adjacency_type)
     |> Enum.map(&elem(&1, 0))
+  end
+
+  @doc """
+  Returns a list of cells in a line from the one at `coords`.
+  The list starts with the cell nearest `coords`, and extends away from it.
+  """
+  @spec line_of_cells(t(a), coordinates, heading) :: list(cell(a)) when a: var
+  def line_of_cells(%T{} = t, coords, heading) do
+    step = @headings_by_type[heading]
+    get_line_of_cells(t, step, sum_coordinates(coords, step))
   end
 
   @doc """
@@ -287,4 +363,27 @@ defmodule AdventOfCode.Grid do
   end
 
   defp sum_coordinates({x1, y1}, {x2, y2}), do: {x1 + x2, y1 + y2}
+end
+
+defimpl Inspect, for: AdventOfCode.Grid do
+  import Inspect.Algebra
+
+  def inspect(grid, opts) do
+    cells =
+      grid
+      |> @for.rows()
+      |> Enum.map_join("\n", &["  " | for({_, char} <- &1, do: char)])
+
+    # Todo: become more familiar with Inspect.Algebra and fix coloring/formatting on this
+    concat([
+      "#",
+      Inspect.Atom.inspect(@for, opts),
+      "<\n",
+      "  ",
+      Inspect.List.inspect([width: grid.width, height: grid.height], opts),
+      "\n",
+      cells,
+      "\n>"
+    ])
+  end
 end
