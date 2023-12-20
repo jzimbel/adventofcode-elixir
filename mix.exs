@@ -23,7 +23,8 @@ defmodule AdventOfCode.MixProject do
     [
       {:httpoison, "~> 1.8"},
       {:benchee, "~> 1.2"},
-      {:libgraph, "~> 0.13.3"}
+      {:libgraph, "~> 0.13.3"},
+      {:stream_data, "~> 0.6", only: [:dev, :test]}
     ]
   end
 end
