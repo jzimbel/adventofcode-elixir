@@ -163,7 +163,6 @@ defmodule AdventOfCode.Solution.Year2023.Day20 do
 
     # 2-stage initialization:
     # 1st pass starts all box agents listed on lhs
-    # 2nd pass links each server to its outputs + starts boxes for any labels that don't appear on lhs
     {boxes, input_ref_counts} =
       input
       |> String.split("\n", trim: true)
@@ -191,8 +190,8 @@ defmodule AdventOfCode.Solution.Year2023.Day20 do
         end
       )
 
-    boxes
-    |> Stream.each(fn {box_label, {box, output_labels}} ->
+    # 2nd pass links each server to its outputs + starts boxes for any labels that don't appear on lhs
+    Enum.each(boxes, fn {box_label, {box, output_labels}} ->
       output_labels
       |> Enum.map(fn label ->
         Map.get_lazy(boxes, label, fn ->
@@ -207,7 +206,6 @@ defmodule AdventOfCode.Solution.Year2023.Day20 do
         BoxAgent.set_input_count(box, input_ref_counts[box_label])
       end)
     end)
-    |> Stream.run()
 
     init_pulse = {false, nil, [button]}
 
@@ -215,14 +213,7 @@ defmodule AdventOfCode.Solution.Year2023.Day20 do
   end
 
   defp find_input_conjunctions(boxes) do
-    rx_input =
-      Enum.find_value(boxes, fn
-        {label, {_, ["rx"]}} -> label
-        _ -> false
-      end)
-
-    boxes
-    |> Enum.filter(fn {_, {_, outputs}} -> rx_input in outputs end)
-    |> Enum.map(fn {label, _} -> label end)
+    {rx_input, _} = Enum.find(boxes, &match?({_label, {_pid, ["rx"]}}, &1))
+    for {label, {_, outputs}} <- boxes, rx_input in outputs, do: label
   end
 end
