@@ -6,12 +6,110 @@
 # It's also safe to run multiple times concurrently since it uses no named processes.
 # (Tho it doesn't clean up after itself--processes aren't stopped.)
 defmodule AdventOfCode.Solution.Year2023.Day20 do
-  alias __MODULE__.{BoxAgent, Broadcaster, Button, Conjunction, FlipFlop}
   alias AdventOfCode.Counter.Multi, as: Counter
   alias AdventOfCode.Math
 
+  defprotocol BoxBehavior do
+    @spec handle_pulse(t(), boolean, pid) :: {t(), :pulse, boolean} | {t(), :no_pulse}
+    def handle_pulse(t, pulse, from)
+
+    @spec set_input_count(t(), non_neg_integer) :: t()
+    def set_input_count(t, count)
+  end
+
+  defmodule Broadcaster, do: defstruct([])
+  defmodule FlipFlop, do: defstruct(state: false)
+  defmodule Conjunction, do: defstruct(state: %{}, input_count: 0)
+  defmodule Button, do: defstruct([])
+
+  defimpl BoxBehavior, for: Broadcaster do
+    def handle_pulse(t, pulse, _), do: {t, :pulse, pulse}
+    def set_input_count(t, _), do: t
+  end
+
+  defimpl BoxBehavior, for: FlipFlop do
+    def handle_pulse(t, true, _), do: {t, :no_pulse}
+    def handle_pulse(t, false, _), do: {%{t | state: not t.state}, :pulse, not t.state}
+    def set_input_count(t, _), do: t
+  end
+
+  defimpl BoxBehavior, for: Conjunction do
+    def handle_pulse(t, pulse, from) do
+      t = update_in(t.state, &Map.put(&1, from, pulse))
+      any_lo = map_size(t.state) < t.input_count or Enum.any?(Map.values(t.state), &(not &1))
+
+      {t, :pulse, any_lo}
+    end
+
+    def set_input_count(t, count), do: %{t | input_count: count}
+  end
+
+  defimpl BoxBehavior, for: Button do
+    def handle_pulse(t, _, _), do: {t, :pulse, false}
+    def set_input_count(t, _), do: t
+  end
+
+  defmodule BoxAgent do
+    @type t :: %__MODULE__{
+            label: String.t(),
+            impl: BoxBehavior.t(),
+            counter: pid,
+            history: pid,
+            outputs: list(pid)
+          }
+
+    @enforce_keys [:label, :impl, :counter, :history]
+    defstruct @enforce_keys ++ [outputs: []]
+
+    def start_link(impl, counter, history, label) do
+      Agent.start_link(fn ->
+        %__MODULE__{label: label, impl: struct(impl), counter: counter, history: history}
+      end)
+    end
+
+    def set_outputs(box, outputs) do
+      Agent.update(box, __MODULE__, :handle_set_outputs, [outputs])
+    end
+
+    def set_input_count(box, count) do
+      Agent.update(box, __MODULE__, :handle_set_intput_count, [count])
+    end
+
+    def send_pulse(box, pulse, from, n) do
+      Agent.get_and_update(box, __MODULE__, :handle_send_pulse, [pulse, from, n])
+    end
+
+    def handle_set_outputs(state, outputs) do
+      %{state | outputs: outputs}
+    end
+
+    def handle_set_intput_count(state, count) do
+      update_in(state.impl, &BoxBehavior.set_input_count(&1, count))
+    end
+
+    def handle_send_pulse(state, pulse, from, n) do
+      case BoxBehavior.handle_pulse(state.impl, pulse, from) do
+        {%Conjunction{} = impl, :pulse, true = new_pulse} ->
+          Agent.cast(state.history, Map, :update, [state.label, [n], fn ns -> ns ++ [n] end])
+          Counter.add(state.counter, new_pulse, length(state.outputs))
+          {{:pulse, new_pulse, self(), state.outputs}, put_in(state.impl, impl)}
+
+        {impl, :pulse, new_pulse} ->
+          Counter.add(state.counter, new_pulse, length(state.outputs))
+          {{:pulse, new_pulse, self(), state.outputs}, put_in(state.impl, impl)}
+
+        {impl, :no_pulse} ->
+          {:no_pulse, put_in(state.impl, impl)}
+      end
+    end
+  end
+
+  ###############
+  # MAIN MODULE #
+  ###############
+
   def part1(input) do
-    {init_pulse, counter, _} = setup(input)
+    {init_pulse, counter, _, _} = setup(input)
 
     Stream.repeatedly(fn -> propagate_pulses([init_pulse], 0) end)
     |> Stream.take(1000)
@@ -22,22 +120,20 @@ defmodule AdventOfCode.Solution.Year2023.Day20 do
     hi_count * lo_count
   end
 
-  @input_conjunctions ~w[rz lf br fk]
-
   def part2(input) do
-    # Code is specific to my puzzle input. I probably could have written a more general
-    # solution that only assumes the same ending layout of
+    # My code assumes the puzzle input has a layout of
     #   [conj_1, ..., conj_n] -> final_conj -> rx
-    # and finds [conj_1, ..., conj_n], but I didn't feel like it.
+    # and finds [conj_1, ..., conj_n], as `input_conjunctions`.
+    # final_conj will only output lo when all its inputs are hi,
+    # so I find cycles of hi pulse output cycles in conj_1, ...,
+    # and then find lcm of all those cycles.
     #
-    # &lb is sole input to rx, so rx gets a lo signal when all &lb's inputs are hi
-    # &lb has inputs [&rz, &lf, &br, &fk]
-    # Find cycles of hi pulse output cycles in each and then find lcm of all 4.
-    {init_pulse, _, history} = setup(input)
+    # This might not work for everyone's puzzle inputs.
+    {init_pulse, _, history, input_conjunctions} = setup(input)
 
     Stream.iterate(1, &(&1 + 1))
     |> Stream.each(&propagate_pulses([init_pulse], &1))
-    |> Stream.map(fn _ -> Agent.get(history, Map, :take, [@input_conjunctions]) end)
+    |> Stream.map(fn _ -> Agent.get(history, Map, :take, [input_conjunctions]) end)
     |> Stream.filter(&(map_size(&1) > 0))
     |> Stream.map(&Map.values/1)
     |> Enum.find(fn cycles -> Enum.all?(cycles, &match?([_, _ | _], &1)) end)
@@ -115,116 +211,18 @@ defmodule AdventOfCode.Solution.Year2023.Day20 do
 
     init_pulse = {false, nil, [button]}
 
-    {init_pulse, counter, history}
-  end
-end
-
-defprotocol AdventOfCode.Solution.Year2023.Day20.BoxBehavior do
-  @spec handle_pulse(t(), boolean, pid) :: {t(), :pulse, boolean} | {t(), :no_pulse}
-  def handle_pulse(t, pulse, from)
-
-  @spec set_input_count(t(), non_neg_integer) :: t()
-  def set_input_count(t, count)
-end
-
-defmodule AdventOfCode.Solution.Year2023.Day20.Broadcaster do
-  defstruct []
-
-  defimpl AdventOfCode.Solution.Year2023.Day20.BoxBehavior do
-    def handle_pulse(t, pulse, _), do: {t, :pulse, pulse}
-    def set_input_count(t, _), do: t
-  end
-end
-
-defmodule AdventOfCode.Solution.Year2023.Day20.FlipFlop do
-  defstruct state: false
-
-  defimpl AdventOfCode.Solution.Year2023.Day20.BoxBehavior do
-    def handle_pulse(t, true, _), do: {t, :no_pulse}
-    def handle_pulse(t, false, _), do: {%{t | state: not t.state}, :pulse, not t.state}
-    def set_input_count(t, _), do: t
-  end
-end
-
-defmodule AdventOfCode.Solution.Year2023.Day20.Conjunction do
-  defstruct state: %{}, input_count: 0
-
-  defimpl AdventOfCode.Solution.Year2023.Day20.BoxBehavior do
-    def handle_pulse(t, pulse, from) do
-      t = update_in(t.state, &Map.put(&1, from, pulse))
-      any_lo = map_size(t.state) < t.input_count or Enum.any?(Map.values(t.state), &(not &1))
-
-      {t, :pulse, any_lo}
-    end
-
-    def set_input_count(t, count), do: %{t | input_count: count}
-  end
-end
-
-defmodule AdventOfCode.Solution.Year2023.Day20.Button do
-  defstruct []
-
-  defimpl AdventOfCode.Solution.Year2023.Day20.BoxBehavior do
-    def handle_pulse(t, _, _), do: {t, :pulse, false}
-    def set_input_count(t, _), do: t
-  end
-end
-
-defmodule AdventOfCode.Solution.Year2023.Day20.BoxAgent do
-  alias AdventOfCode.Solution.Year2023.Day20.Conjunction
-  alias AdventOfCode.Counter.Multi, as: Counter
-  alias AdventOfCode.Solution.Year2023.Day20.BoxBehavior
-
-  @type t :: %__MODULE__{
-          label: String.t(),
-          impl: BoxBehavior.t(),
-          counter: pid,
-          history: pid,
-          outputs: list(pid)
-        }
-
-  @enforce_keys [:label, :impl, :counter, :history]
-  defstruct @enforce_keys ++ [outputs: []]
-
-  def start_link(impl, counter, history, label) do
-    Agent.start_link(fn ->
-      %__MODULE__{label: label, impl: struct(impl), counter: counter, history: history}
-    end)
+    {init_pulse, counter, history, find_input_conjunctions(boxes)}
   end
 
-  def set_outputs(box, outputs) do
-    Agent.update(box, __MODULE__, :handle_set_outputs, [outputs])
-  end
+  defp find_input_conjunctions(boxes) do
+    rx_input =
+      Enum.find_value(boxes, fn
+        {label, {_, ["rx"]}} -> label
+        _ -> false
+      end)
 
-  def set_input_count(box, count) do
-    Agent.update(box, __MODULE__, :handle_set_intput_count, [count])
-  end
-
-  def send_pulse(box, pulse, from, n) do
-    Agent.get_and_update(box, __MODULE__, :handle_send_pulse, [pulse, from, n])
-  end
-
-  def handle_set_outputs(state, outputs) do
-    %{state | outputs: outputs}
-  end
-
-  def handle_set_intput_count(state, count) do
-    update_in(state.impl, &BoxBehavior.set_input_count(&1, count))
-  end
-
-  def handle_send_pulse(state, pulse, from, n) do
-    case BoxBehavior.handle_pulse(state.impl, pulse, from) do
-      {%Conjunction{} = impl, :pulse, true = new_pulse} ->
-        Agent.cast(state.history, Map, :update, [state.label, [n], fn ns -> ns ++ [n] end])
-        Counter.add(state.counter, new_pulse, length(state.outputs))
-        {{:pulse, new_pulse, self(), state.outputs}, put_in(state.impl, impl)}
-
-      {impl, :pulse, new_pulse} ->
-        Counter.add(state.counter, new_pulse, length(state.outputs))
-        {{:pulse, new_pulse, self(), state.outputs}, put_in(state.impl, impl)}
-
-      {impl, :no_pulse} ->
-        {:no_pulse, put_in(state.impl, impl)}
-    end
+    boxes
+    |> Enum.filter(fn {_, {_, outputs}} -> rx_input in outputs end)
+    |> Enum.map(fn {label, _} -> label end)
   end
 end
