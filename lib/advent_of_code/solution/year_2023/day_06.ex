@@ -48,14 +48,15 @@ defmodule AdventOfCode.Solution.Year2023.Day06 do
 
   defp binary_search_first_win(n_min, n_max, t, d) do
     n = div(n_min + n_max, 2)
+    n_sub1 = n - 1
 
-    with {:n_wins_race?, true} <- {:n_wins_race?, n * (t - n) > d},
-         n_sub1 = n - 1,
-         {:n_sub1_loses_race?, true} <- {:n_sub1_loses_race?, n_sub1 * (t - n_sub1) <= d} do
-      n
-    else
-      {:n_wins_race?, false} -> binary_search_first_win(n + 1, n_max, t, d)
-      {:n_sub1_loses_race?, false} -> binary_search_first_win(n_min, n - 1, t, d)
+    cond do
+      # n loses race
+      n * (t - n) <= d -> binary_search_first_win(n + 1, n_max, t, d)
+      # n_sub1 wins race
+      n_sub1 * (t - n_sub1) > d -> binary_search_first_win(n_min, n - 1, t, d)
+      # n wins race and n_sub1 loses race--this is the first win
+      true -> n
     end
   end
 end
