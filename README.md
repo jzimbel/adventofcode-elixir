@@ -31,7 +31,7 @@ mix advent.gen -y${YEAR}
 
 Now you can run the solutions with
 ```shell
-mix advent.solve -d${DAY} -p${1 | 2} [-y${YEAR}] [--bench]
+mix advent.solve -d${DAY} [-p${1 | 2}] [-y${YEAR}] [--bench]
 ```
 
 and tests with
