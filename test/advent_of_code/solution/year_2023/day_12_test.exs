@@ -17,17 +17,17 @@ defmodule AdventOfCode.Solution.Year2023.Day12Test do
   end
 
   test "part1", %{input: input} do
-    result = part1(input)
+    result = input |> parse() |> part1()
 
     assert result == 21
   end
 
   test "part2", %{input: input} do
-    result = part2(input)
+    result = input |> parse() |> part2()
     assert result == 525_152
 
-    input_split = String.split(input, "\n", trim: true)
-    result_split = Enum.map(input_split, &part2/1)
+    parsed_lines = parse(input)
+    result_split = Enum.map(parsed_lines, &part2([&1]))
     assert result_split == [1, 16384, 1, 16, 2500, 506_250]
   end
 end

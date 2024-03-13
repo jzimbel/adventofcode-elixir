@@ -1,22 +1,20 @@
 defmodule AdventOfCode.Solution.Year2023.Day04 do
-  def part1(input) do
-    input
-    |> parse()
-    |> Enum.map(&score_card/1)
-    |> Enum.sum()
-  end
+  use AdventOfCode.Solution.SharedParse
 
-  def part2(input) do
-    input
-    |> parse()
-    |> count_cards()
-  end
-
+  @impl true
   def parse(input) do
     input
     |> String.split("\n", trim: true)
     |> Enum.map(&parse_card/1)
   end
+
+  def part1(cards) do
+    cards
+    |> Enum.map(&score_card/1)
+    |> Enum.sum()
+  end
+
+  def part2(cards), do: count_cards(cards)
 
   defp score_card({_, 0}), do: 0
   defp score_card({_, n}), do: Integer.pow(2, n - 1)

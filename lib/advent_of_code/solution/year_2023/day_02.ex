@@ -22,19 +22,24 @@ end
 defmodule AdventOfCode.Solution.Year2023.Day02 do
   alias __MODULE__.Play
 
-  def part1(input) do
+  use AdventOfCode.Solution.SharedParse
+
+  @impl true
+  def parse(input) do
     input
     |> String.split("\n", trim: true)
-    |> Stream.map(&parse_game/1)
+    |> Enum.map(&parse_game/1)
+  end
+
+  def part1(games) do
+    games
     |> Stream.filter(&valid_for_part1?/1)
     |> Stream.map(fn {game_id, _plays} -> game_id end)
     |> Enum.sum()
   end
 
-  def part2(input) do
-    input
-    |> String.split("\n", trim: true)
-    |> Stream.map(&parse_game/1)
+  def part2(games) do
+    games
     |> Stream.map(&min_cube_power/1)
     |> Enum.sum()
   end

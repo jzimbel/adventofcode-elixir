@@ -12,13 +12,13 @@ defmodule AdventOfCode.Solution.Year2023.Day15Test do
   end
 
   test "part1", %{input: input} do
-    result = part1(input)
+    result = input |> parse() |> part1()
 
     assert result == 1320
   end
 
   test "part2", %{input: input} do
-    result = part2(input)
+    result = input |> parse() |> part2()
 
     assert result == 145
   end

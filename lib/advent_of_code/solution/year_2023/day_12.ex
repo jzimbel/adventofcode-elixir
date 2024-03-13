@@ -1,22 +1,16 @@
 defmodule AdventOfCode.Solution.Year2023.Day12 do
   @memo __MODULE__.MemoTable
 
-  def part1(input) do
+  use AdventOfCode.Solution.SharedParse
+
+  @impl true
+  def parse(input) do
     input
     |> String.split("\n", trim: true)
-    |> Stream.map(&parse_line/1)
-    |> solve()
+    |> Enum.map(&parse_line/1)
   end
 
-  def part2(input) do
-    input
-    |> String.split("\n", trim: true)
-    |> Stream.map(&parse_line/1)
-    |> Stream.map(&quintuple/1)
-    |> solve()
-  end
-
-  defp solve(parsed_lines) do
+  def part1(parsed_lines) do
     :ets.new(@memo, [
       :named_table,
       :public,
@@ -31,6 +25,12 @@ defmodule AdventOfCode.Solution.Year2023.Day12 do
     |> Enum.sum()
   after
     :ets.delete(@memo)
+  end
+
+  def part2(parsed_lines) do
+    parsed_lines
+    |> Stream.map(&quintuple/1)
+    |> part1()
   end
 
   defp quintuple({pat, sizes}) do

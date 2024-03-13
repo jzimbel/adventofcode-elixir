@@ -106,16 +106,19 @@ end
 defmodule AdventOfCode.Solution.Year2023.Day03 do
   alias __MODULE__.Schematic
 
-  def part1(input) do
-    input
-    |> Schematic.from_input()
+  use AdventOfCode.Solution.SharedParse
+
+  @impl true
+  defdelegate parse(input), to: Schematic, as: :from_input
+
+  def part1(schematic) do
+    schematic
     |> Schematic.symbol_adjacent_numbers()
     |> Enum.sum()
   end
 
-  def part2(input) do
-    input
-    |> Schematic.from_input()
+  def part2(schematic) do
+    schematic
     |> Schematic.gear_ratios()
     |> Enum.sum()
   end

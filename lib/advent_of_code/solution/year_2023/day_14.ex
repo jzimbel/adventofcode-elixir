@@ -2,17 +2,21 @@ defmodule AdventOfCode.Solution.Year2023.Day14 do
   alias AdventOfCode.Grid, as: G
   alias AdventOfCode.Sequence
 
-  def part1(input) do
-    input
-    |> G.from_input()
+  use AdventOfCode.Solution.SharedParse
+
+  @impl true
+  defdelegate parse(input), to: G, as: :from_input
+
+  def part1(grid) do
+    grid
     |> tilt(:n)
     |> rock_load()
   end
 
-  def part2(input) do
+  def part2(grid) do
     [:n, :w, :s, :e]
     |> Stream.cycle()
-    |> Stream.scan(G.from_input(input), &tilt(&2, &1))
+    |> Stream.scan(grid, &tilt(&2, &1))
     |> Stream.drop(3)
     |> Stream.take_every(4)
     |> Stream.with_index(1)

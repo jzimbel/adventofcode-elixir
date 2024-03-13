@@ -12,6 +12,7 @@ defmodule AdventOfCode.Solution.Year2023.Day19 do
 
   use AdventOfCode.Solution.SharedParse
 
+  @impl true
   @spec parse(String.t()) :: {%{label => workflow}, list(part)}
   def parse(input) do
     [workflows, parts] = String.split(input, "\n\n")

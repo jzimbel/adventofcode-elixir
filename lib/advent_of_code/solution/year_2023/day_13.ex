@@ -1,15 +1,22 @@
 defmodule AdventOfCode.Solution.Year2023.Day13 do
   alias AdventOfCode.Math
 
-  def part1(input), do: solve(input, _smudge_count = 0)
-  def part2(input), do: solve(input, _smudge_count = 1)
+  use AdventOfCode.Solution.SharedParse
 
-  defp solve(input, smudge_count) do
+  @impl true
+  def parse(input) do
     input
     |> String.split("\n\n", trim: true)
     |> Enum.map(&String.split(&1, "\n", trim: true))
-    |> Enum.map(&find_and_score_line_of_symmetry(&1, smudge_count))
-    |> Enum.sum()
+  end
+
+  def part1(grids), do: solve(grids, _smudge_count = 0)
+  def part2(grids), do: solve(grids, _smudge_count = 1)
+
+  defp solve(grids, smudge_count) do
+    for grid <- grids, reduce: 0 do
+      acc -> acc + find_and_score_line_of_symmetry(grid, smudge_count)
+    end
   end
 
   defp find_and_score_line_of_symmetry(lines, smudge_count) do

@@ -1,6 +1,8 @@
 defmodule AdventOfCode.Solution.Year2023.Day08 do
   alias AdventOfCode.Math
 
+  use AdventOfCode.Solution.SharedParse
+
   @type t :: %__MODULE__{
           labels: %{(index :: non_neg_integer) => String.t()},
           step: non_neg_integer,
@@ -16,16 +18,27 @@ defmodule AdventOfCode.Solution.Year2023.Day08 do
     |> then(&%__MODULE__{labels: &1})
   end
 
-  def part1(input) do
-    input
-    |> parse()
-    |> steps_to_z(["AAA"], &(&1 == "ZZZ"))
+  @impl true
+  def parse(input) do
+    [dirs, map] = String.split(input, "\n\n")
+
+    dirs = for <<dir::1-bytes <- dirs>>, do: dir |> String.downcase() |> String.to_existing_atom()
+
+    map =
+      for <<label::3-bytes, _::4*8, left::3-bytes, _::2*8, right::3-bytes, _::bytes>> <-
+            String.split(map, "\n", trim: true),
+          into: %{},
+          do: {label, %{l: left, r: right}}
+
+    {dirs, map}
   end
 
-  def part2(input) do
-    input
-    |> parse()
-    |> steps_to_z(&match?(<<_, _, ?Z>>, &1))
+  def part1(parsed_input) do
+    steps_to_z(parsed_input, ["AAA"], &(&1 == "ZZZ"))
+  end
+
+  def part2(parsed_input) do
+    steps_to_z(parsed_input, &match?(<<_, _, ?Z>>, &1))
   end
 
   defp steps_to_z({dirs, map}, done?) do
@@ -56,19 +69,5 @@ defmodule AdventOfCode.Solution.Year2023.Day08 do
     zs = if match?([_ | _], found_z), do: MapSet.put(acc.zs, acc.step), else: acc.zs
 
     %{acc | labels: labels, zs: zs, step: acc.step + 1}
-  end
-
-  defp parse(input) do
-    [dirs, map] = String.split(input, "\n\n")
-
-    dirs = for <<dir::1-bytes <- dirs>>, do: dir |> String.downcase() |> String.to_existing_atom()
-
-    map =
-      for <<label::3-bytes, _::4*8, left::3-bytes, _::2*8, right::3-bytes, _::bytes>> <-
-            String.split(map, "\n", trim: true),
-          into: %{},
-          do: {label, %{l: left, r: right}}
-
-    {dirs, map}
   end
 end

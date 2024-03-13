@@ -1,12 +1,16 @@
 defmodule AdventOfCode.Solution.Year2023.Day11 do
-  alias AdventOfCode.Grid, as: G
+  alias AdventOfCode.Grid
 
-  def part1(input), do: solve(input, 1)
-  def part2(input), do: solve(input, 999_999)
+  use AdventOfCode.Solution.SharedParse
 
-  def solve(input, spacing) do
-    input
-    |> G.from_input()
+  @impl true
+  defdelegate parse(input), to: Grid, as: :from_input
+
+  def part1(grid), do: solve(grid, 1)
+  def part2(grid), do: solve(grid, 999_999)
+
+  def solve(grid, spacing) do
+    grid
     |> expanded_galaxy_coords(spacing)
     |> pairwise_distances_sum()
   end
@@ -14,8 +18,8 @@ defmodule AdventOfCode.Solution.Year2023.Day11 do
   defp expanded_galaxy_coords(grid, spacing) do
     [new_xs, new_ys] =
       Task.await_many([
-        Task.async(fn -> expanded_axis(grid, spacing, &G.cols/1, fn {x, _y} -> x end) end),
-        Task.async(fn -> expanded_axis(grid, spacing, &G.rows/1, fn {_x, y} -> y end) end)
+        Task.async(fn -> expanded_axis(grid, spacing, &Grid.cols/1, fn {x, _y} -> x end) end),
+        Task.async(fn -> expanded_axis(grid, spacing, &Grid.rows/1, fn {_x, y} -> y end) end)
       ])
 
     Enum.map(new_xs, fn {coords, x} -> {x, new_ys[coords]} end)

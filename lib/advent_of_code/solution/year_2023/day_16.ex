@@ -20,15 +20,16 @@ defmodule AdventOfCode.Solution.Year2023.Day16 do
 
   defstruct [:beams, history: MapSet.new()]
 
-  def part1(input) do
-    input
-    |> G.from_input(&String.to_existing_atom(<<&1>>))
-    |> count_energized({{0, 0}, {1, 0}})
+  use AdventOfCode.Solution.SharedParse
+
+  @impl true
+  def parse(input), do: G.from_input(input, &String.to_existing_atom(<<&1>>))
+
+  def part1(grid) do
+    count_energized(grid, {{0, 0}, {1, 0}})
   end
 
-  def part2(input) do
-    grid = G.from_input(input, &String.to_existing_atom(<<&1>>))
-
+  def part2(grid) do
     grid
     |> stream_init_beam_states()
     |> Task.async_stream(&count_energized(grid, &1), ordered: false)

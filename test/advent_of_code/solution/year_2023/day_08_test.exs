@@ -39,15 +39,15 @@ defmodule AdventOfCode.Solution.Year2023.Day08Test do
   end
 
   test "part1", %{input1: input1, input2: input2} do
-    result = part1(input1)
+    result = input1 |> parse() |> part1()
     assert result == 2
 
-    result = part1(input2)
+    result = input2 |> parse() |> part1()
     assert result == 6
   end
 
   test "part2", %{input3: input} do
-    result = part2(input)
+    result = input |> parse() |> part2()
 
     assert result == 6
   end

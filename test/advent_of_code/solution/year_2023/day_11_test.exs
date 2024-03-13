@@ -21,13 +21,13 @@ defmodule AdventOfCode.Solution.Year2023.Day11Test do
   end
 
   test "part1", %{input: input} do
-    result = part1(input)
+    result = input |> parse() |> part1()
 
     assert result == 374
   end
 
   test "part2", %{input: input} do
-    result = solve(input, 9)
+    result = input |> parse() |> solve(9)
 
     assert result == 1030
   end

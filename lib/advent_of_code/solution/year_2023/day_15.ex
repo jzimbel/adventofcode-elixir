@@ -1,6 +1,11 @@
 defmodule AdventOfCode.Solution.Year2023.Day15 do
-  def part1(input), do: input |> parse() |> Stream.map(&hash/1) |> Enum.sum()
-  def part2(input), do: input |> parse() |> to_map() |> stream_focusing_powers() |> Enum.sum()
+  use AdventOfCode.Solution.SharedParse
+
+  @impl true
+  def parse(input), do: input |> String.split(",", trim: true) |> Enum.map(&String.trim/1)
+
+  def part1(ops), do: ops |> Stream.map(&hash/1) |> Enum.sum()
+  def part2(ops), do: ops |> to_map() |> stream_focusing_powers() |> Enum.sum()
 
   defp to_map(ops) do
     ops
@@ -20,5 +25,4 @@ defmodule AdventOfCode.Solution.Year2023.Day15 do
   end
 
   defp hash(str), do: for(<<char <- str>>, reduce: 0, do: (acc -> rem((acc + char) * 17, 256)))
-  defp parse(input), do: input |> String.split(",", trim: true) |> Stream.map(&String.trim/1)
 end
