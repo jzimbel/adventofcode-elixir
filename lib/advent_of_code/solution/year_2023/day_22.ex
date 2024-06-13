@@ -1,4 +1,8 @@
 defmodule AdventOfCode.Solution.Year2023.Day22 do
+  require AdventOfCode.Counter.Single, as: Counter
+
+  use AdventOfCode.Solution.SharedParse
+
   defmodule Brick do
     @enforce_keys [:x, :y, :z, :footprint]
     defstruct @enforce_keys ++ [dropped?: false]
@@ -21,13 +25,28 @@ defmodule AdventOfCode.Solution.Year2023.Day22 do
     def lt?(b1, b2), do: b1.z.last < b2.z.first
   end
 
-  require AdventOfCode.Counter.Single, as: Counter
+  @impl true
+  def parse(input) do
+    bricks =
+      input
+      |> String.split("\n", trim: true)
+      |> Stream.with_index()
+      |> Map.new(fn {line, id} -> {id, Brick.new(line)} end)
 
-  @counter __MODULE__.Counter
+    columns =
+      for {id, brick} <- bricks, reduce: %{} do
+        acc ->
+          for xy <- brick.footprint, reduce: acc do
+            acc -> Map.update(acc, xy, [id], &insert_brick(&1, id, bricks))
+          end
+      end
 
-  def part1(input) do
-    {bricks, columns} = init(input)
+    bricks = drop_all(bricks, columns)
 
+    {bricks, columns}
+  end
+
+  def part1({bricks, columns}) do
     load_bearing_bricks =
       bricks
       |> Stream.map(fn {id, brick} ->
@@ -54,44 +73,26 @@ defmodule AdventOfCode.Solution.Year2023.Day22 do
   # After dropping all bricks, build a directed dependency graph: brick A -> brick B, on which A rests
   # For each brick A, find paths from it to the bottom. If all pass through some brick B, then B is load-bearing and would cause A to fall if removed.
   # For each brick, count number of load-bearing bricks. Sum is the solution.
-  def part2(input) do
-    {bricks, columns} = init(input)
+  def part2({bricks, columns}) do
     bricks = Map.new(bricks, fn {id, brick} -> {id, %{brick | dropped?: false}} end)
 
-    Counter.start_link([], name: @counter)
+    {:ok, counter} = Counter.start_link([])
 
     bricks
-    |> Task.async_stream(__MODULE__, :simulate_removal, [bricks, columns], ordered: false)
+    |> Task.async_stream(__MODULE__, :simulate_removal, [bricks, columns, counter],
+      ordered: false
+    )
     |> Stream.run()
 
-    Counter.value(@counter)
-  after
-    Counter.stop(@counter)
+    drop_count = Counter.value(counter)
+    Counter.stop(counter)
+
+    drop_count
   end
 
-  def simulate_removal({id, brick}, bricks, columns) do
-    _ = drop_all(Map.delete(bricks, id), delete_from_columns(columns, id, brick))
+  def simulate_removal({id, brick}, bricks, columns, counter) do
+    _ = drop_all(Map.delete(bricks, id), delete_from_columns(columns, id, brick), counter)
     nil
-  end
-
-  defp init(input) do
-    bricks =
-      input
-      |> String.split("\n", trim: true)
-      |> Stream.with_index()
-      |> Map.new(fn {line, id} -> {id, Brick.new(line)} end)
-
-    columns =
-      for {id, brick} <- bricks, reduce: %{} do
-        acc ->
-          for xy <- brick.footprint, reduce: acc do
-            acc -> Map.update(acc, xy, [id], &insert_brick(&1, id, bricks))
-          end
-      end
-
-    bricks = drop_all(bricks, columns)
-
-    {bricks, columns}
   end
 
   defp delete_from_columns(columns, id, brick) do
@@ -100,7 +101,7 @@ defmodule AdventOfCode.Solution.Year2023.Day22 do
     end
   end
 
-  defp drop_all(bricks, columns) do
+  defp drop_all(bricks, columns, counter \\ nil) do
     lowest_undropped_brick =
       bricks
       |> Stream.reject(fn {_, brick} -> brick.dropped? end)
@@ -115,10 +116,10 @@ defmodule AdventOfCode.Solution.Year2023.Day22 do
           |> Stream.map(&bricks[&1].z.last)
           |> Enum.max(fn -> 0 end)
 
-        brick
-        |> Brick.drop_to_z(highest_z_below + 1)
-        |> tap(&(&1.z.first < brick.z.first and Counter.increment(@counter)))
-        |> then(&drop_all(%{bricks | id => &1}, columns))
+        new_brick = Brick.drop_to_z(brick, highest_z_below + 1)
+
+        if counter && new_brick.z.first < brick.z.first, do: Counter.increment(counter)
+        drop_all(%{bricks | id => new_brick}, columns, counter)
 
       :all_dropped ->
         bricks
