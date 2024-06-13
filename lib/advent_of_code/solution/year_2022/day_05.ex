@@ -46,7 +46,7 @@ defmodule AdventOfCode.Solution.Year2022.Day05 do
     |> Enum.drop(1)
     |> Enum.take_every(4)
     |> Enum.with_index(fn crate, i -> {i + 1, [crate]} end)
-    |> Enum.reject(&match?({_stack_label, ' '}, &1))
+    |> Enum.reject(&match?({_stack_label, ~c" "}, &1))
     |> Map.new()
   end
 

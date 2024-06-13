@@ -19,18 +19,18 @@ defmodule AdventOfCode.CharSpace.FourDim do
       for x <- x_bounds, y <- y_bounds, z <- z_bounds, w <- w_bounds, do: {x, y, z, w}
     end
 
-    def min_maxer({x, y, z, w}, {xmin..xmax, ymin..ymax, zmin..zmax, wmin..wmax}) do
-      {min(x, xmin)..max(x, xmax), min(y, ymin)..max(y, ymax), min(z, zmin)..max(z, zmax),
-       min(w, wmin)..max(w, wmax)}
+    def min_maxer({x, y, z, w}, {xmin..xmax//1, ymin..ymax//1, zmin..zmax//1, wmin..wmax//1}) do
+      {min(x, xmin)..max(x, xmax)//1, min(y, ymin)..max(y, ymax)//1,
+       min(z, zmin)..max(z, zmax)//1, min(w, wmin)..max(w, wmax)//1}
     end
 
     def min_maxer({x2, y2, z2, w2}, {x1, y1, z1, w1}) do
-      {min(x1, x2)..max(x1, x2), min(y1, y2)..max(y1, y2), min(z1, z2)..max(z1, z2),
-       min(w1, w2)..max(w1, w2)}
+      {min(x1, x2)..max(x1, x2)//1, min(y1, y2)..max(y1, y2)//1, min(z1, z2)..max(z1, z2)//1,
+       min(w1, w2)..max(w1, w2)//1}
     end
 
-    def pad_ranges({x1..x2, y1..y2, z1..z2, w1..w2}) do
-      {(x1 - 1)..(x2 + 1), (y1 - 1)..(y2 + 1), (z1 - 1)..(z2 + 1), (w1 - 1)..(w2 + 1)}
+    def pad_ranges({x1..x2//1, y1..y2//1, z1..z2//1, w1..w2//1}) do
+      {(x1 - 1)..(x2 + 1)//1, (y1 - 1)..(y2 + 1)//1, (z1 - 1)..(z2 + 1)//1, (w1 - 1)..(w2 + 1)//1}
     end
 
     def sum_coordinates({x1, y1, z1, w1}, {x2, y2, z2, w2}) do

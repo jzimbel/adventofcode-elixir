@@ -37,8 +37,8 @@ defmodule AdventOfCode.Solution.Year2021.Day22 do
     if disjoint?(lhs_cuboid, rhs_cuboid) do
       [lhs_cuboid]
     else
-      {xmin1..xmax1, ymin1..ymax1 = y, zmin1..zmax1 = z} = lhs_cuboid
-      {xmin2..xmax2, ymin2..ymax2, zmin2..zmax2} = rhs_cuboid
+      {xmin1..xmax1//1, ymin1..ymax1//1 = y, zmin1..zmax1//1 = z} = lhs_cuboid
+      {xmin2..xmax2//1, ymin2..ymax2//1, zmin2..zmax2//1} = rhs_cuboid
 
       x_clamped = max(xmin1, xmin2)..min(xmax1, xmax2)//1
       y_clamped = max(ymin1, ymin2)..min(ymax1, ymax2)//1
@@ -89,7 +89,7 @@ defmodule AdventOfCode.Solution.Year2021.Day22 do
     ~r/(-?\d+)..(-?\d+)/
     |> Regex.scan(cuboid, capture: :all_but_first)
     |> Enum.map(fn [lower, upper] ->
-      String.to_integer(lower)..String.to_integer(upper)
+      String.to_integer(lower)..String.to_integer(upper)//1
     end)
     |> List.to_tuple()
   end

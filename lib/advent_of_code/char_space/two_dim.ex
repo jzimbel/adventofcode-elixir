@@ -17,16 +17,16 @@ defmodule AdventOfCode.CharSpace.TwoDim do
       for x <- x_bounds, y <- y_bounds, do: {x, y}
     end
 
-    def min_maxer({x, y}, {xmin..xmax, ymin..ymax}) do
-      {min(x, xmin)..max(x, xmax), min(y, ymin)..max(y, ymax)}
+    def min_maxer({x, y}, {xmin..xmax//1, ymin..ymax//1}) do
+      {min(x, xmin)..max(x, xmax)//1, min(y, ymin)..max(y, ymax)//1}
     end
 
     def min_maxer({x2, y2}, {x1, y1}) do
-      {min(x1, x2)..max(x1, x2), min(y1, y2)..max(y1, y2)}
+      {min(x1, x2)..max(x1, x2)//1, min(y1, y2)..max(y1, y2)//1}
     end
 
-    def pad_ranges({x1..x2, y1..y2}) do
-      {(x1 - 1)..(x2 + 1), (y1 - 1)..(y2 + 1)}
+    def pad_ranges({x1..x2//1, y1..y2//1}) do
+      {(x1 - 1)..(x2 + 1)//1, (y1 - 1)..(y2 + 1)//1}
     end
 
     def sum_coordinates({x1, y1}, {x2, y2}) do

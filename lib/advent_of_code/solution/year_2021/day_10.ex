@@ -12,15 +12,15 @@ defmodule AdventOfCode.Solution.Year2021.Day10 do
     input
     |> parse_input()
     |> Enum.map(&incomplete_stack/1)
-    |> Enum.reject(&match?('', &1))
+    |> Enum.reject(&match?(~c"", &1))
     |> Enum.map(&autocomplete_score/1)
     |> Enum.sort()
     |> then(fn scores -> Enum.at(scores, div(length(scores), 2)) end)
   end
 
-  defp corrupted_char(line, bracket_stack \\ '')
+  defp corrupted_char(line, bracket_stack \\ ~c"")
 
-  defp corrupted_char('', _), do: nil
+  defp corrupted_char(~c"", _), do: nil
 
   for {open, close} <- [{?(, ?)}, {?[, ?]}, {?{, ?}}, {?<, ?>}] do
     defp corrupted_char([unquote(open) | rest_line], stack) do
@@ -34,9 +34,9 @@ defmodule AdventOfCode.Solution.Year2021.Day10 do
 
   defp corrupted_char([char | _], _), do: char
 
-  defp incomplete_stack(line, bracket_stack \\ '')
+  defp incomplete_stack(line, bracket_stack \\ ~c"")
 
-  defp incomplete_stack('', stack), do: stack
+  defp incomplete_stack(~c"", stack), do: stack
 
   for {open, close} <- [{?(, ?)}, {?[, ?]}, {?{, ?}}, {?<, ?>}] do
     defp incomplete_stack([unquote(open) | rest_line], stack) do
@@ -48,7 +48,7 @@ defmodule AdventOfCode.Solution.Year2021.Day10 do
     end
   end
 
-  defp incomplete_stack([_ | _], _), do: ''
+  defp incomplete_stack([_ | _], _), do: ~c""
 
   defp corrupted_score(?)), do: 3
   defp corrupted_score(?]), do: 57

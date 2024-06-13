@@ -1,6 +1,6 @@
 defmodule AdventOfCode.Solution.Year2021.Day17 do
   def part1(input) do
-    {_x_target, ymin..ymax} = target = parse_input(input)
+    {_x_target, ymin..ymax//1} = target = parse_input(input)
 
     -ymin..-ymax//-1
     |> Stream.map(&simulate_shot({0, &1}, target))
@@ -10,9 +10,9 @@ defmodule AdventOfCode.Solution.Year2021.Day17 do
   end
 
   def part2(input) do
-    {_xmin..xmax, ymin.._ymax} = target = parse_input(input)
+    {_xmin..xmax//1, ymin.._ymax//1} = target = parse_input(input)
 
-    for(vx <- 0..xmax, vy <- ymin..-ymin, do: {vx, vy})
+    for(vx <- 0..xmax//1, vy <- ymin..-ymin//1, do: {vx, vy})
     |> Stream.map(&simulate_shot(&1, target))
     |> Enum.count(&hits_target?(&1, target))
   end
@@ -28,8 +28,8 @@ defmodule AdventOfCode.Solution.Year2021.Day17 do
     {{vx - unit(vx), vy - 1}, {x + vx, y + vy}}
   end
 
-  defp in_simulation_bounds?({x, y}, {xmin..xmax, ymin.._ymax}) do
-    x in min(0, xmin)..max(0, xmax) and y >= ymin
+  defp in_simulation_bounds?({x, y}, {xmin..xmax//1, ymin.._ymax//1}) do
+    x in min(0, xmin)..max(0, xmax)//1 and y >= ymin
   end
 
   # Detects shots where the probe hits the target's y bounds on its first step below y=0
@@ -53,7 +53,7 @@ defmodule AdventOfCode.Solution.Year2021.Day17 do
     |> List.flatten()
     |> Enum.map(&String.to_integer/1)
     |> then(fn [xmin, xmax, ymin, ymax] ->
-      {xmin..xmax, ymin..ymax}
+      {xmin..xmax//1, ymin..ymax//1}
     end)
   end
 

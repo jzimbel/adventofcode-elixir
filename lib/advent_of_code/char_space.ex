@@ -110,7 +110,7 @@ defmodule AdventOfCode.CharSpace do
         |> Enum.reduce(grid, fn coords, g -> Map.put_new(g, coords, empty_char) end)
       end
 
-      defp pad_range(l..r), do: (l - 1)..(r + 1)
+      defp pad_range(l..r//1), do: (l - 1)..(r + 1)//1
     end
   end
 end

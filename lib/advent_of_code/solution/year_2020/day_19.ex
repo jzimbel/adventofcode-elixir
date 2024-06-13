@@ -85,6 +85,6 @@ defmodule AdventOfCode.Solution.Year2020.Day19 do
   end
 
   defp non_capture_group(pattern_source) do
-    ['(?:', pattern_source, ?)]
+    [~c"(?:", pattern_source, ?)]
   end
 end

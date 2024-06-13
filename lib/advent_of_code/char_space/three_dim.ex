@@ -18,16 +18,17 @@ defmodule AdventOfCode.CharSpace.ThreeDim do
       for x <- x_bounds, y <- y_bounds, z <- z_bounds, do: {x, y, z}
     end
 
-    def min_maxer({x, y, z}, {xmin..xmax, ymin..ymax, zmin..zmax}) do
-      {min(x, xmin)..max(x, xmax), min(y, ymin)..max(y, ymax), min(z, zmin)..max(z, zmax)}
+    def min_maxer({x, y, z}, {xmin..xmax//1, ymin..ymax//1, zmin..zmax//1}) do
+      {min(x, xmin)..max(x, xmax)//1, min(y, ymin)..max(y, ymax)//1,
+       min(z, zmin)..max(z, zmax)//1}
     end
 
     def min_maxer({x2, y2, z2}, {x1, y1, z1}) do
-      {min(x1, x2)..max(x1, x2), min(y1, y2)..max(y1, y2), min(z1, z2)..max(z1, z2)}
+      {min(x1, x2)..max(x1, x2)//1, min(y1, y2)..max(y1, y2)//1, min(z1, z2)..max(z1, z2)//1}
     end
 
-    def pad_ranges({x1..x2, y1..y2, z1..z2}) do
-      {(x1 - 1)..(x2 + 1), (y1 - 1)..(y2 + 1), (z1 - 1)..(z2 + 1)}
+    def pad_ranges({x1..x2//1, y1..y2//1, z1..z2//1}) do
+      {(x1 - 1)..(x2 + 1)//1, (y1 - 1)..(y2 + 1)//1, (z1 - 1)..(z2 + 1)//1}
     end
 
     def sum_coordinates({x1, y1, z1}, {x2, y2, z2}) do

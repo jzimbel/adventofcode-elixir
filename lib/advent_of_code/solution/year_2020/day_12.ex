@@ -17,7 +17,7 @@ defmodule AdventOfCode.Solution.Year2020.Day12 do
   defmodule Nav1 do
     import AdventOfCode.Point
 
-    def do_action(ship, <<rot_dir, deg::binary>>) when rot_dir in 'LR' do
+    def do_action(ship, <<rot_dir, deg::binary>>) when rot_dir in ~c"LR" do
       %{ship | cursor: rotate(ship.cursor, String.to_integer(deg), rot_dir)}
     end
 
@@ -25,7 +25,7 @@ defmodule AdventOfCode.Solution.Year2020.Day12 do
       %{ship | posn: translate(ship.posn, ship.cursor, String.to_integer(mag))}
     end
 
-    def do_action(ship, <<dir, mag::binary>>) when dir in 'NESW' do
+    def do_action(ship, <<dir, mag::binary>>) when dir in ~c"NESW" do
       %{ship | posn: translate(ship.posn, dir, String.to_integer(mag))}
     end
   end
@@ -33,7 +33,7 @@ defmodule AdventOfCode.Solution.Year2020.Day12 do
   defmodule Nav2 do
     import AdventOfCode.Point
 
-    def do_action(ship, <<dir, mag::binary>>) when dir in 'NESW' do
+    def do_action(ship, <<dir, mag::binary>>) when dir in ~c"NESW" do
       %{ship | cursor: translate(ship.cursor, dir, String.to_integer(mag))}
     end
 
