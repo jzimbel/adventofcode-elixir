@@ -1,10 +1,17 @@
 # Advent of Code Elixir Solutions
 
-Solutions and tests for [Advent of Code](https://adventofcode.com/) puzzles.
+Solutions and tests for [Advent of Code][aoc] puzzles.
 
-Built with the [Advent of Code Elixir Starter](https://github.com/mhanberg/advent-of-code-elixir-starter).
+Built with the [Advent of Code Elixir Starter][aoc-starter].
 
 Tweaked substantially from there.
+
+> [!NOTE]
+> Disclaimer: Not all of my solution code is idiomatic Elixir—for some
+> puzzles, I've taken unusual approaches, or written extra-dense code, or
+> optimized for performance, or tried new standard library features with which
+> I'm not very familiar.\
+> Readability is not always a priority.
 
 ## Usage
 
@@ -39,24 +46,38 @@ and tests with
 mix test
 ```
 
-either directly in your local terminal, or in VSCode's terminal pane while connected to the Docker container described below.
+either directly in your local terminal, or in VSCode's terminal pane while
+connected to a dev container as described below.
 
-### Get started coding with zero configuration
+## Get started in a self-contained environment
 
-#### Using Visual Studio Code
+This project can optionally run in a dev container for remote development.\
+You have two options:
 
-1. [Install Docker Desktop](https://www.docker.com/products/docker-desktop)
-1. Open project directory in VS Code
-1. Press F1, and select `Remote-Containers: Reopen in Container...`
-1. Wait a few minutes as it pulls image down and builds Dev Container Docker image (this should only need to happen once unless you modify the Dockerfile)
-    1. You can see progress of the build by clicking `Starting Dev Container (show log): Building image` that appears in bottom right corner
-    1. During the build process it will also automatically run `mix deps.get`
-1. Once complete VS Code will connect your running Dev Container and will feel like your doing local development
-1. If you would like to use a specific version of Elixir change the `VARIANT` version in `.devcontainer/devcontainer.json`
-1. If you would like more information about VS Code Dev Containers check out the [dev container documentation](https://code.visualstudio.com/docs/remote/create-dev-container/?WT.mc_id=AZ-MVP-5003399)
+### :octocat: Using GitHub Codespaces
+1. Go to the landing page of this repo.
+1. Click the `<> Code` drop-down menu, select the Codespaces tab, and click the
+   big green button.
+1. Wait for the Codespace to build. It should be relatively speedy if you build
+   from the main branch, as I have prebuilds configured for that.
+1. Once the in-browser editor activates, follow the steps from [Usage](#usage)
+   to enable puzzle downloads and run a solution. (You can use
+   <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>`</kbd> to open a terminal pane.)
 
-#### Compatible with Github Codespaces
-1. If you don't have Github Codespaces beta access, sign up for the beta https://github.com/features/codespaces/signup
-1. On GitHub, navigate to the main page of the repository.
-1. Under the repository name, use the  Code drop-down menu, and select Open with Codespaces.
-1. If you already have a codespace for the branch, click  New codespace.
+   If you're running on a fork of the repository, you can also edit as you
+   please.
+
+### :whale: Using Visual Studio Code + Docker Desktop
+
+Requires Docker Desktop or an alternative Docker-compliant CLI, like podman.
+
+Simply open the project directory locally in VS Code. It will show a popup
+asking if you want to use the Dev Container. It will then guide you through
+getting set up, building the container image, and connecting to the running dev
+container.
+
+[aoc]: https://adventofcode.com/
+[aoc-starter]: https://github.com/mhanberg/advent-of-code-elixir-starter
+[docker]: https://www.docker.com/products/docker-desktop
+[dev-container]:
+    https://code.visualstudio.com/docs/devcontainers/create-dev-container
