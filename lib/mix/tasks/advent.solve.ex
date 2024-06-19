@@ -176,9 +176,9 @@ defmodule Mix.Tasks.Advent.Solve do
 
   defp fetch_solution_module(%{year: year, day: day}) do
     day_alias =
-      "Day~2..0B"
-      |> :io_lib.format([day])
-      |> to_string()
+      day
+      |> Integer.to_string()
+      |> String.pad_leading(2, "0")
 
     module = Module.concat([AdventOfCode, Solution, "Year#{year}", day_alias])
 
