@@ -51,10 +51,13 @@ connected to a dev container as described below.
 
 ## Get started in a self-contained environment
 
+<img width="1912" alt="Screenshot of the project running in GitHub Codespaces" src="https://github.com/user-attachments/assets/8b2e5625-c9dc-489b-99a3-39b7a8888c00">
+
 This project can optionally run in a dev container for remote development.\
 You have two options:
 
-### :octocat: Using GitHub Codespaces
+### :octocat: Run in your browser using GitHub Codespaces
+
 1. Go to the landing page of this repo.
 1. Click the `<> Code` drop-down menu, select the Codespaces tab, and click the
    big green button.
