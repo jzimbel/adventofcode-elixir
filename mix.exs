@@ -21,11 +21,10 @@ defmodule AdventOfCode.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:httpoison, "~> 2.0"},
       {:benchee, "~> 1.3"},
-      {:libgraph, "~> 0.16"},
-      {:tz, "~> 0.26.5"},
-      {:stream_data, "~> 0.6", only: [:test]}
+      {:explorer, "~> 0.10.0"},
+      {:httpoison, "~> 2.0"},
+      {:tz, "~> 0.26.5"}
     ]
   end
 end
