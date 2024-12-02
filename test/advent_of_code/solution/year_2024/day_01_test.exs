@@ -2,6 +2,7 @@ defmodule AdventOfCode.Solution.Year2024.Day01Test do
   use ExUnit.Case, async: true
 
   import AdventOfCode.Solution.Year2024.Day01
+  require Explorer.DataFrame, as: DF
 
   setup do
     [
@@ -17,9 +18,9 @@ defmodule AdventOfCode.Solution.Year2024.Day01Test do
   end
 
   test "parse", %{input: input} do
-    cols = parse(input)
+    df = parse(input)
 
-    assert [[3, 4, 2, 1, 3, 3], [4, 3, 5, 3, 9, 3]] == cols
+    assert %{a: [3, 4, 2, 1, 3, 3], b: [4, 3, 5, 3, 9, 3]} == DF.to_columns(df, atom_keys: true)
   end
 
   test "part1", %{input: input} do
