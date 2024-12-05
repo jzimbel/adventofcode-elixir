@@ -85,7 +85,7 @@ defmodule AdventOfCode.Grid do
   in with a default value. E.g. `fn -> ?. end`.
   """
   @spec from_cells(list(cell(a))) :: t(a) when a: var
-  @spec from_cells(list(cell(a)), (() -> a)) :: t(a) when a: var
+  @spec from_cells(list(cell(a)), (-> a)) :: t(a) when a: var
   def from_cells(cells, default_fn \\ fn -> raise "`Grid.from_cells`: missing coords" end) do
     width = Stream.map(cells, &elem(elem(&1, 0), 0)) |> Enum.max()
     height = Stream.map(cells, &elem(elem(&1, 0), 1)) |> Enum.max()
@@ -278,61 +278,72 @@ defmodule AdventOfCode.Grid do
 
   @doc """
   Returns a list of lists of cells in lines from the one at `coords`.
-  Each list starts with the cell nearest `coords`, and radiates outward.
+
+  Each list starts with the cell nearest `coords`, and radiates outward
+  until it hits the edge of the grid.
+
+  If `lazy?` is true, a list of **streams** will be returned instead.
 
   The type of adjacency is determined by the third argument:
 
-  - `:all` (default behavior):
-    ```
-    O.O.O
-    .OOO.
-    OO*OO
-    .OOO.
-    O.O.O
-    ```
-  - `:cardinal`:
-    ```
-    ..O..
-    ..O..
-    OO*OO
-    ..O..
-    ..O..
-    ```
-  - `:intercardinal`:
-    ```
-    O...O
-    .O.O.
-    ..*..
-    .O.O.
-    O...O
-    ```
+  `:all` (default behavior):
+
+      O.O.O
+      .OOO.
+      OO*OO
+      .OOO.
+      O.O.O
+
+  `:cardinal`:
+
+      ..O..
+      ..O..
+      OO*OO
+      ..O..
+      ..O..
+
+  `:intercardinal`:
+
+      O...O
+      .O.O.
+      ..*..
+      .O.O.
+      O...O
   """
-  @spec lines_of_cells(t(a), coordinates, adjacency_type) :: list(list(cell(a))) when a: var
-  def lines_of_cells(%T{} = t, coords, adjacency_type \\ :all) do
+  @spec lines_of_cells(t(a), coordinates, adjacency_type, false) :: [[cell(a)]] when a: var
+  @spec lines_of_cells(t(a), coordinates, adjacency_type, true) :: [Enumerable.t(cell(a))]
+        when a: var
+  def lines_of_cells(%T{} = t, coords, adjacency_type \\ :all, lazy? \\ false) do
     @adjacency_deltas_by_type[adjacency_type]
-    |> Enum.map(&get_line_of_cells(t, &1, sum_coordinates(coords, &1)))
+    |> Enum.map(&get_line_of_cells(t, &1, sum_coordinates(coords, &1), lazy?))
   end
 
   @doc """
   Convenience function that behaves the same as `lines_of_cells/3`,
   but returns only the value of each cell.
   """
-  @spec lines_of_values(t(a), coordinates, adjacency_type) :: list(list(a)) when a: var
-  def lines_of_values(%T{} = t, coords, adjacency_type \\ :all) do
+  @spec lines_of_values(t(a), coordinates, adjacency_type, false) :: [[a]] when a: var
+  @spec lines_of_values(t(a), coordinates, adjacency_type, true) :: [Enumerable.t(a)] when a: var
+  def lines_of_values(%T{} = t, coords, adjacency_type \\ :all, lazy? \\ false) do
+    mapper = if lazy?, do: &Stream.map/2, else: &Enum.map/2
+
     t
-    |> lines_of_cells(coords, adjacency_type)
-    |> Enum.map(fn line -> Enum.map(line, &elem(&1, 1)) end)
+    |> lines_of_cells(coords, adjacency_type, lazy?)
+    |> Enum.map(fn line -> mapper.(line, &elem(&1, 1)) end)
   end
 
   @doc """
   Convenience function that behaves the same as `lines_of_cells/3`,
   but returns only the coordinates of each cell.
   """
-  @spec lines_of_coords(t(term), coordinates, adjacency_type) :: list(list(coordinates))
-  def lines_of_coords(%T{} = t, coords, adjacency_type \\ :all) do
+  @spec lines_of_coords(t(term), coordinates, adjacency_type, false) :: [[coordinates]]
+  @spec lines_of_coords(t(term), coordinates, adjacency_type, true) :: [Enumerable.t(coordinates)]
+  def lines_of_coords(%T{} = t, coords, adjacency_type \\ :all, lazy? \\ false) do
+    mapper = if lazy?, do: &Stream.map/2, else: &Enum.map/2
+
     t
-    |> lines_of_cells(coords, adjacency_type)
-    |> Enum.map(fn line -> Enum.map(line, &elem(&1, 0)) end)
+    |> lines_of_cells(coords, adjacency_type, lazy?)
+    |> Enum.map(fn line -> mapper.(line, &elem(&1, 0)) end)
   end
 
   @doc """
@@ -348,11 +359,23 @@ defmodule AdventOfCode.Grid do
     |> Enum.reject(&is_nil/1)
   end
 
-  defp get_line_of_cells(t, step, coords) do
+  defp get_line_of_cells(t, step, coords, lazy? \\ false)
+
+  defp get_line_of_cells(t, step, coords, false) do
     case at(t, coords) do
       nil -> []
       val -> [{coords, val} | get_line_of_cells(t, step, sum_coordinates(coords, step))]
     end
+  end
+
+  defp get_line_of_cells(t, step, coords, true) do
+    Stream.unfold(
+      coords,
+      &case at(t, &1) do
+        nil -> nil
+        val -> {{&1, val}, sum_coordinates(&1, step)}
+      end
+    )
   end
 
   defp find_nonempty_on_line(t, step, coords, empty_value) do
