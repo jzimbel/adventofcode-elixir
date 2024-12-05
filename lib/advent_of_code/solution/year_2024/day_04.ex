@@ -29,8 +29,8 @@ defmodule AdventOfCode.Solution.Year2024.Day04 do
   defp x_mas?({coords, ?A}, grid) do
     with [nw, sw, ne, se] <- G.adjacent_values(grid, coords, :intercardinal) do
       case {nw, sw, ne, se} do
-        {a, a, b, b} when a != b and a in ~C"MS" and b in ~C"MS" -> true
-        {a, b, a, b} when a != b and a in ~C"MS" and b in ~C"MS" -> true
+        {a, a, b, b} when a != b and a in ~c"MS" and b in ~c"MS" -> true
+        {a, b, a, b} when a != b and a in ~c"MS" and b in ~c"MS" -> true
         _ -> false
       end
     else
