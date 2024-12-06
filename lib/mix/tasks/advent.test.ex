@@ -92,8 +92,9 @@ defmodule Mix.Tasks.Advent.Test do
     with {:ok, args} <- Args.parse(raw_args) do
       test_path = get_test_path(args)
       passthrough = Enum.join(args.passthrough, " ")
+      cmd = Enum.join(["→ mix test", passthrough, test_path] |> Enum.reject(&(&1 == "")), " ")
 
-      Mix.shell().info(IO.ANSI.format([:bright, "→ mix test #{passthrough} #{test_path}\n"]))
+      Mix.shell().info(IO.ANSI.format([:bright, cmd, "\n"]))
 
       Mix.Task.run("test", args.passthrough ++ [test_path])
     end
