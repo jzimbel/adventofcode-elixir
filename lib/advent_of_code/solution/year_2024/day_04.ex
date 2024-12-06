@@ -27,14 +27,10 @@ defmodule AdventOfCode.Solution.Year2024.Day04 do
   end
 
   defp x_mas?({coords, ?A}, grid) do
-    with [nw, sw, ne, se] <- G.adjacent_values(grid, coords, :intercardinal) do
-      case {nw, sw, ne, se} do
-        {a, a, b, b} when a != b and a in ~c"MS" and b in ~c"MS" -> true
-        {a, b, a, b} when a != b and a in ~c"MS" and b in ~c"MS" -> true
-        _ -> false
-      end
-    else
-      _A_is_on_edge_of_grid -> false
+    case G.adjacent_values(grid, coords, :intercardinal) do
+      [a, a, b, b] when a != b and a in ~c"MS" and b in ~c"MS" -> true
+      [a, b, a, b] when a != b and a in ~c"MS" and b in ~c"MS" -> true
+      _not_x_mas_or_A_is_on_edge_of_grid -> false
     end
   end
 end

@@ -215,26 +215,31 @@ defmodule AdventOfCode.Grid do
   @doc """
   Returns a list of cells adjacent to the one at `coords`.
 
+  If a cell in a particular direction doesn't exist because the starting cell is
+  on the edge of the grid, a shorter list is returned.
+
   The type of adjacency is determined by the third argument:
 
-  - `:all` (default behavior):
-    ```
-    OOO
-    O*O
-    OOO
-    ```
-  - `:cardinal`:
-    ```
-    .O.
-    O*O
-    .O.
-    ```
-  - `:intercardinal`:
-    ```
-    O.O
-    .*.
-    O.O
-    ```
+  `:all` (default behavior):\\
+  Order returned: `[nw, w, sw, n, s, ne, e, se]`
+
+      OOO
+      O*O
+      OOO
+
+  `:cardinal`:\\
+  Order returned: `[w, n, s, e]`
+
+      .O.
+      O*O
+      .O.
+
+  `:intercardinal`:\\
+  Order returned: `[nw, sw, ne, se]`
+
+      O.O
+      .*.
+      O.O
   """
   @spec adjacent_cells(t(a), coordinates, adjacency_type) :: list(cell(a)) when a: var
   def adjacent_cells(%T{} = t, coords, adjacency_type \\ :all) do
@@ -357,6 +362,21 @@ defmodule AdventOfCode.Grid do
     @all_adjacent_deltas
     |> Enum.map(&find_nonempty_on_line(t, &1, sum_coordinates(coords, &1), empty_value))
     |> Enum.reject(&is_nil/1)
+  end
+
+  @doc """
+  Translates a "step" tuple to a compass direction.
+
+  Examples:
+
+      iex> step_to_compass({-1, -1})
+      "nw"
+      iex> step_to_compass({1,0})
+      "e"
+  """
+  @spec step_to_compass({-1..1, -1..1}) :: String.t()
+  def step_to_compass({x, y}) when x in -1..1 and y in -1..1 and not (x == 0 and y == 0) do
+    "#{Enum.at(["n", "", "s"], x + 1)}#{Enum.at(["w", "", "e"], y + 1)}"
   end
 
   defp get_line_of_cells(t, step, coords, lazy? \\ false)
