@@ -18,6 +18,10 @@ defmodule AdventOfCode.MixProject do
     ]
   end
 
+  def cli do
+    [preferred_envs: ["advent.test": :test]]
+  end
+
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [

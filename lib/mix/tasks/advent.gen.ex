@@ -1,38 +1,33 @@
 defmodule Mix.Tasks.Advent.Gen do
-  use Mix.Task
-  require Mix.Generator
-
-  @shortdoc "Generates source files for a new year of Advent of Code puzzles"
-
   @moduledoc """
   # USAGE
-  ```
-  mix advent.gen <--year <year>>
-  ```
+      mix advent.gen <--year <year>>
 
   # DESCRIPTION
   Generates source files for a new year of Advent of Code puzzles and populates them with boilerplate code.
 
-  ```
-  /
-  |- lib/
-  | |- advent_of_code/
-  | | |- solution/
-  | | | |- year_${YEAR}/
-  | | | | |- day_01.ex
-  | | | | |- day_02.ex
-  | | | | |- ...
-  | | | | |- day_25.ex
-  |- test/
-  | |- advent_of_code/
-  | | |- solution/
-  | | | |- year_${YEAR}/
-  | | | | |- day_01_test.ex
-  | | | | |- day_02_test.ex
-  | | | | |- ...
-  | | | | |- day_25_test.ex
-  ```
+      /
+      |- lib/
+      | |- advent_of_code/
+      | | |- solution/
+      | | | |- year_${YEAR}/
+      | | | | |- day_01.ex
+      | | | | |- day_02.ex
+      | | | | |- ...
+      | | | | |- day_25.ex
+      |- test/
+      | |- advent_of_code/
+      | | |- solution/
+      | | | |- year_${YEAR}/
+      | | | | |- day_01_test.ex
+      | | | | |- day_02_test.ex
+      | | | | |- ...
+      | | | | |- day_25_test.ex
   """
+  use Mix.Task
+  @shortdoc "Generates source files for a new year of Advent of Code puzzles"
+
+  require Mix.Generator
 
   @days 1..25
 

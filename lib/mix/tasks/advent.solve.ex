@@ -1,22 +1,24 @@
 defmodule Mix.Tasks.Advent.Solve do
   @moduledoc """
+  Runs a puzzle solution.
+
   # USAGE
-  ```
-  mix #{Mix.Task.task_name(__MODULE__)} [--year <year>] <--day <day>> [--part <part>] [--bench]
-  ```
+      mix advent.solve [--year <year>] <--day <day>> [--part <part>] [--bench]
 
   ## Required
-  - `--day`, `-d`    Day number. (1..25 inclusive)
+  | Option | Info |
+  | ------ | ---- |
+  | `--day`, `-d` | Day number. (1..25 inclusive) |
 
   ## Optional
-  - `--year`, `-y`   Year. If omitted, defaults to current year (if it's December) or previous year (if it's another month)
-  - `--part`, `-p`   Part number. Either 1 or 2. If omitted, both parts for that day will run.
-  - `--bench`, `-b`  Run benchmarks.
+  | Option | Info |
+  | ------ | ---- |
+  | `--year`, `-y` | Year. If omitted, defaults to current year (if it's December) or previous year (if it's another month) |
+  | `--part`, `-p` | Part number. Either 1 or 2. If omitted, both parts for that day will run. |
+  | `--bench`, `-b` | Run benchmarks. |
   """
-
-  @shortdoc "Runs an Advent of Code puzzle solution"
-
   use Mix.Task
+  @shortdoc "Runs an Advent of Code puzzle solution"
 
   defmodule Args do
     @type t :: %__MODULE__{
