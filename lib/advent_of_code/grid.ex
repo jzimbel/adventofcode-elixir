@@ -739,6 +739,22 @@ defmodule AdventOfCode.Grid do
     |> Enum.reject(&is_nil/1)
   end
 
+  @doc ~S"""
+  Returns true if `coords` exists within the grid.
+
+      iex> grid = from_input("AB\nCD\n")
+      iex> in_bounds?(grid, {0,1})
+      true
+      iex> in_bounds?(grid, {8,1})
+      false
+      iex> in_bounds?(grid, {-1,-1})
+      false
+  """
+  @spec in_bounds?(t(), any) :: boolean
+  def in_bounds?(%T{} = t, coords) do
+    Map.has_key?(t.grid, coords)
+  end
+
   @doc """
   Translates a "step" tuple to a compass direction.
 
