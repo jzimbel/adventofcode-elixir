@@ -9,11 +9,16 @@ defmodule AdventOfCode.Solution.Year2024.Day07 do
     end
   end
 
-  def part1(equations), do: solve(equations, 2)
-  def part2(equations), do: solve(equations, 3)
+  def part1(equations), do: sum_solvable(equations, 2)
+  def part2(equations), do: sum_solvable(equations, 3)
 
-  defp solve(eqs, n_ops) do
-    for {target, _ns} = eq <- eqs, solvable?(eq, n_ops), reduce: 0, do: (acc -> acc + target)
+  defp sum_solvable(eqs, n_ops) do
+    eqs
+    |> Task.async_stream(fn {target, _ns} = eq ->
+      if solvable?(eq, n_ops), do: target, else: 0
+    end)
+    |> Stream.map(fn {:ok, n} -> n end)
+    |> Enum.sum()
   end
 
   def solvable?({target, ns}, n_ops) do
