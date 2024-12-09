@@ -6,21 +6,31 @@ defmodule AdventOfCode.Solution.Year2024.Day08Test do
   setup do
     [
       input: """
+      ............
+      ........0...
+      .....0......
+      .......0....
+      ....0.......
+      ......A.....
+      ............
+      ............
+      ........A...
+      .........A..
+      ............
+      ............
       """
     ]
   end
 
-  @tag :skip
   test "part1", %{input: input} do
-    result = part1(input)
+    result = input |> parse() |> part1()
 
-    assert result
+    assert result == 14
   end
 
-  @tag :skip
   test "part2", %{input: input} do
-    result = part2(input)
+    result = input |> parse() |> part2()
 
-    assert result
+    assert result == 34
   end
 end
