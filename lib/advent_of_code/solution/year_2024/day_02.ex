@@ -20,7 +20,7 @@ defmodule AdventOfCode.Solution.Year2024.Day02 do
 
   defp check_interval([a, b], asc?) do
     with true <- gradual?(a, b),
-         {true, asc?} <- asc_desc?(a, b, asc?) do
+         {:ok, asc?} <- asc_desc?(a, b, asc?) do
       asc?
     else
       false -> :not_safe
@@ -29,8 +29,8 @@ defmodule AdventOfCode.Solution.Year2024.Day02 do
 
   defp gradual?(a, b), do: abs(b - a) in 1..3
 
-  defp asc_desc?(a, b, nil), do: {true, b - a > 0}
-  defp asc_desc?(a, b, asc?) when b - a > 0 == asc?, do: {true, asc?}
+  defp asc_desc?(a, b, nil), do: {:ok, b - a > 0}
+  defp asc_desc?(a, b, asc?) when asc? == b - a > 0, do: {:ok, asc?}
   defp asc_desc?(_a, _b, _asc?), do: false
 
   # Brute-force runs in a few hundred µs so I guess it's fine!

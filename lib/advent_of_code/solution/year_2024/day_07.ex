@@ -14,17 +14,18 @@ defmodule AdventOfCode.Solution.Year2024.Day07 do
 
   defp sum_solvable(eqs, n_ops) do
     eqs
-    |> Task.async_stream(fn {target, _ns} = eq ->
-      if solvable?(eq, n_ops), do: target, else: 0
+    |> Task.async_stream(&check_solvable(&1, n_ops), ordered: false)
+    |> Stream.map(fn
+      {:ok, nil} -> 0
+      {:ok, n} -> n
     end)
-    |> Stream.map(fn {:ok, n} -> n end)
     |> Enum.sum()
   end
 
-  def solvable?({target, ns}, n_ops) do
+  def check_solvable({target, ns}, n_ops) do
     ns
     |> stream_calculations(n_ops)
-    |> Enum.any?(&(&1 == target))
+    |> Enum.find(&(&1 == target))
   end
 
   def stream_calculations([], _n_ops), do: []
