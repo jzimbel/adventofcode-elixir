@@ -101,13 +101,13 @@ defmodule AdventOfCode.Solution.Year2021.Day22Test do
   end
 
   test "part1", %{input1: input1, input2: input2} do
-    assert 39 == part1(input1)
-    assert 590_784 == part1(input2)
+    assert 39 == input1 |> parse() |> part1()
+    assert 590_784 == input2 |> parse() |> part1()
   end
 
   test "part2", %{input1: input1, input2: input2, input_yuge: input_yuge} do
-    assert 39 == part2(input1)
-    assert 39_769_202_357_779 == part2(input2)
-    assert 2_758_514_936_282_235 == part2(input_yuge)
+    assert 39 == input1 |> parse() |> part2()
+    assert 39_769_202_357_779 == input2 |> parse() |> part2()
+    assert 2_758_514_936_282_235 == input_yuge |> parse() |> part2()
   end
 end

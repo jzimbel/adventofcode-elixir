@@ -1,15 +1,38 @@
 defmodule AdventOfCode.Solution.Year2021.Day22 do
-  def part1(input) do
+  use AdventOfCode.Solution.SharedParse
+
+  @impl true
+  def parse(input) do
     input
-    |> parse_input()
+    |> String.split("\n", trim: true)
+    |> Enum.map(&parse_line/1)
+  end
+
+  defp parse_line(line) do
+    line
+    |> String.split()
+    |> then(fn [on_off, cuboid] ->
+      {String.to_existing_atom(on_off), parse_cuboid(cuboid)}
+    end)
+  end
+
+  defp parse_cuboid(cuboid) do
+    ~r/(-?\d+)..(-?\d+)/
+    |> Regex.scan(cuboid, capture: :all_but_first)
+    |> Enum.map(fn [lower, upper] ->
+      String.to_integer(lower)..String.to_integer(upper)//1
+    end)
+    |> List.to_tuple()
+  end
+
+  def part1(cuboids) do
+    cuboids
     |> Enum.map(&clamp/1)
     |> total_volume()
   end
 
-  def part2(input) do
-    input
-    |> parse_input()
-    |> total_volume()
+  def part2(cuboids) do
+    total_volume(cuboids)
   end
 
   defp total_volume(cuboids) do
@@ -69,28 +92,5 @@ defmodule AdventOfCode.Solution.Year2021.Day22 do
 
   defp disjoint?({x1, y1, z1}, {x2, y2, z2}) do
     Range.disjoint?(x1, x2) or Range.disjoint?(y1, y2) or Range.disjoint?(z1, z2)
-  end
-
-  defp parse_input(input) do
-    input
-    |> String.split("\n", trim: true)
-    |> Enum.map(&parse_line/1)
-  end
-
-  defp parse_line(line) do
-    line
-    |> String.split()
-    |> then(fn [on_off, cuboid] ->
-      {String.to_existing_atom(on_off), parse_cuboid(cuboid)}
-    end)
-  end
-
-  defp parse_cuboid(cuboid) do
-    ~r/(-?\d+)..(-?\d+)/
-    |> Regex.scan(cuboid, capture: :all_but_first)
-    |> Enum.map(fn [lower, upper] ->
-      String.to_integer(lower)..String.to_integer(upper)//1
-    end)
-    |> List.to_tuple()
   end
 end
