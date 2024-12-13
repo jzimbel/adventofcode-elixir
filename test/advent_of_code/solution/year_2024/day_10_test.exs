@@ -69,14 +69,9 @@ defmodule AdventOfCode.Solution.Year2024.Day10Test do
   end
 
   test "part1", ctx do
-    result = ctx.input1 |> parse() |> part1()
-    assert result == 1
-
-    result = ctx.input2 |> parse() |> part1()
-    assert result == 2
-
-    result = ctx.input3 |> parse() |> part1()
-    assert result == 4
+    assert ctx.input1 |> parse() |> part1() == 1
+    assert ctx.input2 |> parse() |> part1() == 2
+    assert ctx.input3 |> parse() |> part1() == 4
   end
 
   test "part2", ctx do
