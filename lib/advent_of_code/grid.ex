@@ -25,9 +25,10 @@ defmodule AdventOfCode.Grid do
   @type cell :: cell(term)
 
   @type adjacency_type :: :all | :cardinal | :intercardinal | :up
-  @type heading_name :: :n | :e | :s | :w | :ne | :se | :sw | :nw
 
-  @type heading :: {-1..1, -1 | 1} | {-1 | 1, -1..1}
+  @type heading :: heading_name | heading_coords
+  @type heading_name :: :n | :e | :s | :w | :ne | :se | :sw | :nw
+  @type heading_coords :: {-1..1, -1 | 1} | {-1 | 1, -1..1}
 
   @enforce_keys ~w[grid width height]a
   defstruct @enforce_keys
@@ -45,17 +46,6 @@ defmodule AdventOfCode.Grid do
     all: @all_adjacent_deltas,
     cardinal: @cardinal_adjacent_deltas,
     intercardinal: @intercardinal_adjacent_deltas
-  }
-
-  @headings_by_name %{
-    n: {0, -1},
-    e: {1, 0},
-    s: {0, 1},
-    w: {-1, 0},
-    ne: {1, -1},
-    se: {1, 1},
-    sw: {-1, 1},
-    nw: {-1, -1}
   }
 
   @doc """
@@ -492,6 +482,32 @@ defmodule AdventOfCode.Grid do
   end
 
   @doc """
+  Returns the cell adjacent to `coords` in `heading` direction,
+  or nil if no such cell exists.
+
+      iex> grid = from_input(~S|
+      ...> FN7
+      ...> W*E
+      ...> LSJ
+      ...> |)
+      iex> adjacent_cell(grid, {1,1}, :e)
+      {{2,1}, ?E}
+      iex> adjacent_cell(grid, {1,1}, {0,1})
+      {{1,2}, ?S}
+      iex> adjacent_cell(grid, {0,0}, :nw)
+      nil
+  """
+  @spec adjacent_cell(t(a), coordinates, heading) :: cell(a) | nil when a: var
+  def adjacent_cell(%T{} = t, coords, heading) do
+    adj_coords = sum_coordinates(coords, normalize_heading(heading))
+
+    case at(t, adj_coords) do
+      nil -> nil
+      v -> {adj_coords, v}
+    end
+  end
+
+  @doc """
   Returns a list of cells adjacent to the one at `coords`.
 
   By default (when `in_bounds_only?` is true), if a cell in a particular
@@ -608,11 +624,15 @@ defmodule AdventOfCode.Grid do
       [{{3,1}, ?7}, {{4,0}, ?c}]
       iex> line_of_cells(grid, {0,0}, :nw)
       []
+      iex> line_of_cells(grid, {2,2}, {1, -1})
+      [{{3,1}, ?7}, {{4,0}, ?c}]
   """
-  @spec line_of_cells(t(a), coordinates, heading_name, false) :: list(cell(a)) when a: var
-  @spec line_of_cells(t(a), coordinates, heading_name, true) :: Enumerable.t(cell(a)) when a: var
-  def line_of_cells(%T{} = t, coords, heading_name, lazy? \\ false) do
-    step = @headings_by_name[heading_name]
+  @spec line_of_cells(t(a), coordinates, heading, false) :: list(cell(a))
+        when a: var
+  @spec line_of_cells(t(a), coordinates, heading, true) :: Enumerable.t(cell(a))
+        when a: var
+  def line_of_cells(%T{} = t, coords, heading, lazy? \\ false) do
+    step = normalize_heading(heading)
     get_line_of_cells(t, step, sum_coordinates(coords, step), lazy?)
   end
 
@@ -786,8 +806,8 @@ defmodule AdventOfCode.Grid do
       iex> heading_to_compass({1,0})
       "e"
   """
-  @spec heading_to_compass(heading) :: String.t()
-  def heading_to_compass({x, y}) when x in -1..1 and y in -1..1 and not (x == 0 and y == 0) do
+  @spec heading_to_compass(heading_coords) :: String.t()
+  def heading_to_compass({x, y}) do
     "#{Enum.at(["n", "", "s"], y + 1)}#{Enum.at(["w", "", "e"], x + 1)}"
   end
 
@@ -818,6 +838,24 @@ defmodule AdventOfCode.Grid do
         val -> {{&1, val}, sum_coordinates(&1, step)}
       end
     )
+  end
+
+  defp normalize_heading(name) when is_atom(name) do
+    case name do
+      :n -> {0, -1}
+      :ne -> {1, -1}
+      :e -> {1, 0}
+      :se -> {1, 1}
+      :s -> {0, 1}
+      :sw -> {-1, 1}
+      :w -> {-1, 0}
+      :nw -> {-1, -1}
+    end
+  end
+
+  defp normalize_heading({x, y} = heading)
+       when (x in -1..1 and y in -1..1 and x != 0) or y != 0 do
+    heading
   end
 end
 
