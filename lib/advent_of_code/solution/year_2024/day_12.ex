@@ -63,21 +63,27 @@ defmodule AdventOfCode.Solution.Year2024.Day12 do
 
   defp side_count(r, grid) do
     r
+    # Get a list of {inside_coords, outside_coords} for each fence on the perimeter.
     |> Enum.flat_map(fn coords ->
       grid
       |> G.adjacent_coords(coords, :cardinal, false)
       |> Enum.reject(&(&1 in r))
       |> Enum.map(&{coords, &1})
     end)
+    # Group fences by the direction they face.
+    # E.g. a fence on the right side of a square, faces right.
     |> Enum.group_by(
       fn {from, to} -> subtract(to, from) end,
       fn {from, _to} -> from end
     )
     |> Enum.flat_map(fn {heading, fences} ->
+      # Further group these by the column (if facing right/left) or row (if facing up/down) they occupy.
       case heading do
         {_, 0} -> Enum.group_by(fences, fn {x, _y} -> x end, fn {_x, y} -> y end)
         {0, _} -> Enum.group_by(fences, fn {_x, y} -> y end, fn {x, _y} -> x end)
       end
+      # Within each column/row, group contiguous sequences of fences.
+      # Each group is a side of the region.
       |> Enum.flat_map(fn {_, col_or_row} -> chunk_contiguous(col_or_row) end)
     end)
     |> length()
