@@ -64,10 +64,27 @@ defmodule Mix.Tasks.Advent.Solve do
           :error
 
         true ->
-          parsed
-          |> Map.put_new_lazy(:year, &default_year/0)
-          |> then(&struct!(__MODULE__, &1))
-          |> then(&{:ok, &1})
+          args =
+            parsed
+            |> Map.put_new_lazy(:year, &default_year/0)
+            |> then(&struct!(__MODULE__, &1))
+
+          if date_ok?(args), do: {:ok, args}, else: :error
+      end
+    end
+
+    defp date_ok?(args) do
+      target_date = Date.new!(args.year, 12, args.day)
+      today = DateTime.now!("America/New_York") |> DateTime.to_date()
+
+      if Date.compare(target_date, today) in [:lt, :eq] do
+        true
+      else
+        Mix.shell().error(
+          "Can't run solution for a future date! (Today is #{today} in Eastern timezone)"
+        )
+
+        false
       end
     end
 
