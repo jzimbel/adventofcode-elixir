@@ -49,6 +49,38 @@ defmodule AdventOfCode.Grid do
   }
 
   @doc """
+  Creates a Grid whose cells all have the given value. (Default: ?.)
+
+      iex> new(3, 3)
+      #AdventOfCode.Grid<
+        [width: 3, height: 3]
+        ...
+        ...
+        ...
+      >
+
+      iex> new(5, 1, ?#)
+      #AdventOfCode.Grid<
+        [width: 5, height: 1]
+        #####
+      >
+  """
+  @spec new(non_neg_integer, non_neg_integer) :: t(char)
+  @spec new(non_neg_integer, non_neg_integer, a) :: t(a) when a: var
+  def new(width, height, fill_with \\ ?.) do
+    grid =
+      for x <- 0..(width - 1)//1, y <- 0..(height - 1)//1, into: %{} do
+        {{x, y}, fill_with}
+      end
+
+    %T{
+      grid: grid,
+      width: width,
+      height: height
+    }
+  end
+
+  @doc """
   Creates a Grid from an AoC input string.
 
       iex> from_input(~S|
@@ -309,12 +341,12 @@ defmodule AdventOfCode.Grid do
       ...> def
       ...> ghi
       ...> |)
-      iex> replace_many(grid, %{{0,0} => ?x, {2,0} => ?y, {0,2} => ?z})
+      iex> replace_many(grid, %{{0,0} => ?X, {2,0} => ?Y, {0,2} => ?Z})
       #AdventOfCode.Grid<
         [width: 3, height: 3]
-        xby
+        XbY
         def
-        zhi
+        Zhi
       >
   """
   @spec replace_many(t(a), grid(a)) :: t(a) when a: var
@@ -867,7 +899,7 @@ defimpl Enumerable, for: AdventOfCode.Grid do
 end
 
 # Inspect and String.Chars implementations assume the grid has char-valued cells.
-# Trying to inspect or stringify a grid with values will fail.
+# Trying to inspect or stringify a grid with values that do not implement String.Chars will fail.
 
 defimpl Inspect, for: AdventOfCode.Grid do
   import Inspect.Algebra
