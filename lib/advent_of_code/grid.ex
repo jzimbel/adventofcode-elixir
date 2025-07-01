@@ -898,6 +898,24 @@ defimpl Enumerable, for: AdventOfCode.Grid do
   def slice(grid), do: Enumerable.Map.slice(grid.grid)
 end
 
+defimpl Collectable, for: AdventOfCode.Grid do
+  def into(grid), do: {grid, &collect/2}
+
+  defp collect(grid_acc, {:cont, {coords, value}}) when is_map_key(grid_acc.grid, coords) do
+    put_in(grid_acc.grid[coords], value)
+  end
+
+  defp collect(_grid_acc, {:cont, other}) do
+    raise ArgumentError,
+          "collecting into a Grid requires {key, value} tuples where key is " <>
+            "a coordinate pair within the bounds of the grid, got: #{inspect(other)}"
+  end
+
+  defp collect(grid_acc, :done), do: grid_acc
+
+  defp collect(_, :halt), do: :ok
+end
+
 # Inspect and String.Chars implementations assume the grid has char-valued cells.
 # Trying to inspect or stringify a grid with values that do not implement String.Chars will fail.
 
