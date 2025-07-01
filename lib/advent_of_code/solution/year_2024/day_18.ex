@@ -20,41 +20,61 @@ defmodule AdventOfCode.Solution.Year2024.Day18 do
   def part1({grid, drops}, t \\ 1024) do
     grid =
       drops
-      |> Enum.take(t)
+      |> Stream.take(t)
       |> Enum.reduce(grid, &G.replace(&2, &1, ?#))
 
-    {:ok, path} = Algo.a_star(grid, {0, 0}, {grid.width - 1, grid.height - 1})
-    steps = length(path) - 1
-    steps
+    goal = {grid.width - 1, grid.height - 1}
+
+    {_path, cost} =
+      grid
+      |> Algo.a_star(start_state(goal), goal)
+      |> Enum.fetch!(0)
+
+    cost
   end
 
   def part2({grid, drops}) do
-    {x, y} = find_blocker(grid, drops)
-    "#{x},#{y}"
-  end
-
-  defp find_blocker(grid, drops, prev_path \\ nil, prev_drop \\ nil)
-
-  defp find_blocker(grid, [drop | drops], prev_path, prev_drop) do
-    if is_nil(prev_path) or Enum.any?(prev_path, &(G.at(grid, &1) == ?#)) do
-      case Algo.a_star(grid, {0, 0}, {grid.width - 1, grid.height - 1}) do
-        {:ok, path} -> find_blocker(G.replace(grid, drop, ?#), drops, path, drop)
-        :error -> prev_drop
-      end
+    with {:ok, path} <- find_path(grid),
+         {x, y} when is_integer(x) and is_integer(y) <-
+           Enum.reduce_while(drops, {grid, path}, &check_drop/2) do
+      "#{x},#{y}"
     else
-      find_blocker(G.replace(grid, drop, ?#), drops, prev_path, drop)
+      _initial_path_blocked_or_path_never_blocked -> nil
     end
   end
 
-  # No drops left to apply, but we haven't checked whether the final drop blocked the path
-  defp find_blocker(grid, [], prev_path, prev_drop) do
-    if is_nil(prev_path) or Enum.any?(prev_path, &(G.at(grid, &1) == ?#)) do
-      case Algo.a_star(grid, {0, 0}, {grid.width - 1, grid.height - 1}) do
-        {:ok, _path} -> :error
-        :error -> prev_drop
-      end
+  defp start_state(goal) do
+    %AdventOfCode.Algo.AStar.State{
+      current: {0, 0},
+      heuristic: AdventOfCode.Algo.Helpers.manhattan_distance({0, 0}, goal)
+    }
+  end
+
+  defp check_drop(drop, {grid, prev_path}) do
+    grid = G.replace(grid, drop, ?#)
+
+    case find_path(grid, prev_path, drop) do
+      {:ok, path} -> {:cont, {grid, path}}
+      :error -> {:halt, drop}
+    end
+  end
+
+  defp find_path(grid, prev_path \\ nil, drop \\ nil)
+
+  defp find_path(grid, nil, _drop) do
+    goal = {grid.width - 1, grid.height - 1}
+
+    grid
+    |> Algo.a_star(start_state(goal), goal)
+    |> Stream.map(fn {path, _cost} -> path end)
+    |> Enum.fetch(0)
+  end
+
+  defp find_path(grid, prev_path, drop) do
+    if drop in prev_path do
+      find_path(grid)
     else
-      :error
+      {:ok, prev_path}
     end
   end
 end

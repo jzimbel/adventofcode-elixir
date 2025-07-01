@@ -1,100 +1,169 @@
 defmodule AdventOfCode.Algo.AStar do
-  @moduledoc false
-
+  @moduledoc """
+  A* search implementation for Grid.
+  """
   alias AdventOfCode.Grid, as: G
-  import AdventOfCode.Algo.Helpers
+  require AdventOfCode.PriorityQueue, as: Q
+  use TypedStruct
 
-  @typep t :: %__MODULE__{
-           grid: G.t(),
-           start: G.coordinates(),
-           goal: G.coordinates(),
-           heuristic: (G.coordinates(), G.coordinates() -> integer),
-           open_set: MapSet.t(G.coordinates()),
-           came_from: %{G.coordinates() => G.coordinates()},
-           g_score: %{G.coordinates() => integer},
-           f_score: %{G.coordinates() => integer}
-         }
+  @typedoc """
+  Unique identifier for a node in the graph being searched.
 
-  @enforce_keys [:grid, :start, :goal, :heuristic, :open_set, :came_from, :g_score, :f_score]
-  defstruct @enforce_keys
+  Usually this is a coordinate pair (`{x,y}`) or coordinates + heading (`{{x,y}, {hx,hy}}`)
+  when searching a Grid.
+  """
+  @type node_id :: term
 
-  @spec run(G.t(), G.coordinates(), G.coordinates()) :: {:ok, list(G.coordinates())} | :error
-  @spec run(G.t(), G.coordinates(), G.coordinates(), heuristic) ::
-          {:ok, list(G.coordinates())} | :error
-        when heuristic: (G.coordinates(), G.coordinates() -> integer)
-  def run(grid, start, goal, heuristic \\ &manhattan_distance/2) do
-    %__MODULE__{
-      grid: grid,
-      start: start,
-      goal: goal,
-      heuristic: heuristic,
-      open_set: MapSet.new([start]),
-      came_from: %{},
-      # default val :infinity
-      g_score: %{start => 0},
-      # default val :infinity
-      f_score: %{start => heuristic.(start, goal)}
-    }
-    |> a_star()
+  ##############
+  # Node state #
+  ##############
+  typedstruct module: State do
+    field(:current, AdventOfCode.Algo.AStar.node_id(), enforce: true)
+    field(:heuristic, integer | :infinity, enforce: true)
+    field(:score, integer, default: 0)
+
+    field(:came_from, %{AdventOfCode.Algo.AStar.node_id() => AdventOfCode.Algo.AStar.node_id()},
+      default: %{}
+    )
   end
 
-  @spec a_star(t()) :: {:ok, list(G.coordinates())} | :error
-  defp a_star(%__MODULE__{} = state) do
-    if Enum.empty?(state.open_set) do
-      :error
-    else
-      current =
-        Enum.min_by(state.open_set, fn coords ->
-          Map.get(state.f_score, coords, :infinity)
-        end)
+  #######################
+  # Global search state #
+  #######################
+  typedstruct module: Search, enforce: true do
+    field(:impl, module)
+    field(:grid, G.t())
+    field(:goal, G.coordinates())
+    field(:q, MapSet.t(State.t()))
+    field(:shortest_path_cost, integer | :infinity)
+    # maps visited nodes to their min scores
+    field(:visited, %{AdventOfCode.Algo.AStar.node_id() => integer})
+  end
 
-      case update_state(state, current) do
-        {:halt, path} -> {:ok, path}
-        {:cont, state} -> a_star(state)
+  #############
+  # Behaviour #
+  #############
+  defmodule Impl do
+    # TODO: Convert to protocol?
+    # Complicating factor: both the implementation
+    # and the generalized code need to access state values.
+    # So, likely would need to add more callbacks for the generalized code
+    # to use, so that it isn't directly reaching into the struct fields.
+    @callback next(State.t(), Search.t()) :: Enumerable.t(State.t())
+    @callback at_goal?(State.t(), G.coordinates()) :: boolean
+    @callback priority(State.t()) :: term
+
+    defmacro __using__(_) do
+      quote do
+        @behaviour AdventOfCode.Algo.AStar.Impl
+
+        @impl true
+        def next(state, search) do
+          for {neighbor, ?.} <-
+                AdventOfCode.Grid.adjacent_cells(search.grid, state.current, :cardinal) do
+            %AdventOfCode.Algo.AStar.State{
+              current: neighbor,
+              heuristic: AdventOfCode.Algo.Helpers.manhattan_distance(neighbor, search.goal),
+              score: state.score + 1,
+              came_from: Map.put(state.came_from, neighbor, state.current)
+            }
+          end
+        end
+
+        @impl true
+        def at_goal?(state, goal), do: state.current == goal
+
+        @impl true
+        def priority(state) do
+          state.score + state.heuristic
+        end
+
+        defoverridable AdventOfCode.Algo.AStar.Impl
       end
     end
   end
 
-  defp update_state(%__MODULE__{goal: current} = state, current) do
-    {:halt, reconstruct_path(current, state.came_from)}
-  end
+  defmodule DefaultImpl, do: use(Impl)
 
-  defp update_state(state, current) do
-    state = update_in(state.open_set, &MapSet.delete(&1, current))
+  ###############
+  # MAIN MODULE #
+  ###############
 
-    state =
-      for {neighbor, ?.} <- G.adjacent_cells(state.grid, current, :cardinal), reduce: state do
-        state -> update_neighbor(state, neighbor, current)
-      end
+  @type path_info :: {path, cost :: integer}
+  @type path :: list(node_id())
 
-    {:cont, state}
-  end
+  @spec run(G.t(), State.t(), G.coordinates()) :: Enumerable.t(path_info)
+  @spec run(G.t(), State.t(), term, module) :: Enumerable.t(path_info)
+  def run(grid, start, goal, impl \\ DefaultImpl) do
+    Code.ensure_loaded!(impl)
 
-  defp update_neighbor(state, neighbor, current) do
-    tentative_g_score = Map.fetch!(state.g_score, current) + 1
-
-    if tentative_g_score < Map.get(state.g_score, neighbor, :infinity) do
-      %{
-        state
-        | open_set: MapSet.put(state.open_set, neighbor),
-          came_from: Map.put(state.came_from, neighbor, current),
-          g_score: Map.put(state.g_score, neighbor, tentative_g_score),
-          f_score:
-            Map.put(
-              state.f_score,
-              neighbor,
-              tentative_g_score + state.heuristic.(neighbor, state.goal)
-            )
+    search =
+      %Search{
+        impl: impl,
+        grid: grid,
+        goal: goal,
+        q: Q.new([start], &impl.priority/1),
+        shortest_path_cost: :infinity,
+        visited: %{}
       }
-    else
-      state
+
+    Stream.unfold(search, &a_star/1)
+  end
+
+  # Recurses until it finds a path or runs out of nodes to search.
+  # Emits the path if it is a shortest path, otherwise returns nil to end the stream.
+  # (We know there are no more shortest paths as soon as we see a longer one)
+  @spec a_star(Search.t()) :: {{path, integer}, Search.t()} | nil
+  defp a_star(search) when Q.is_empty(search.q), do: nil
+
+  defp a_star(search) do
+    {state, search} = get_and_update_in(search.q, &Q.pop!/1)
+
+    case check_state_score(state, search.visited, search.shortest_path_cost) do
+      :ok ->
+        search = update_in(search.visited, &Map.put(&1, state.current, state.score))
+
+        if search.impl.at_goal?(state, search.goal) and
+             state.score <= search.shortest_path_cost do
+          path = reconstruct_path(state.current, state.came_from)
+          cost = state.score
+          search = %{search | shortest_path_cost: cost}
+          {{path, cost}, search}
+        else
+          a_star(update_search(search, state))
+        end
+
+      :skip ->
+        a_star(search)
+
+      :halt ->
+        nil
     end
   end
 
-  defp reconstruct_path(coords, came_from, path \\ []) do
-    case Map.fetch(came_from, coords) do
-      {:ok, prev} -> reconstruct_path(prev, came_from, [coords | path])
-      :error -> [coords | path]
+  defp check_state_score(state, _visited, shortest_path_cost)
+       when state.score > shortest_path_cost,
+       do: :halt
+
+  defp check_state_score(state, visited, _shortest_path_cost) do
+    case Map.fetch(visited, state.current) do
+      {:ok, prev_score} when state.score > prev_score -> :skip
+      _ -> :ok
+    end
+  end
+
+  defp update_search(search, state) do
+    for next_state <- search.impl.next(state, search), reduce: search do
+      search -> update_in(search.q, &Q.push(&1, next_state))
+    end
+  end
+
+  defp reconstruct_path(node_id, came_from, path \\ []) do
+    path = [node_id | path]
+
+    case Map.fetch(came_from, node_id) do
+      {:ok, prev_node_id} -> reconstruct_path(prev_node_id, came_from, path)
+      :error -> path
     end
   end
 end
