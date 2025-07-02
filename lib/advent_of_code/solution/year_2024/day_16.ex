@@ -9,18 +9,19 @@ defmodule AdventOfCode.Solution.Year2024.Day16 do
     import Algo.Helpers
 
     @impl true
-    def next(state, search) do
-      {coords, _heading} = state.current
+    def next_states(state, search) do
+      {coords, heading} = state.current
 
-      for {neighbor, ?.} <- G.adjacent_cells(search.grid, coords, :cardinal),
-          next = {neighbor, subtract(neighbor, coords)},
-          cost = cost(state.current, next),
+      for {neighbor, ?.} <- G.adjacent_cells(search.graph, coords, :cardinal),
+          next_heading = subtract(neighbor, coords),
           # Shortest path will never contain a U-turn.
-          cost != 2001 do
+          next_heading != invert(heading) do
+        next = {neighbor, next_heading}
+
         %Algo.AStar.State{
           current: next,
           heuristic: heuristic(next, search.goal),
-          score: state.score + cost,
+          score: state.score + cost(state.current, next),
           came_from: Map.put(state.came_from, next, state.current)
         }
       end
@@ -32,27 +33,36 @@ defmodule AdventOfCode.Solution.Year2024.Day16 do
       coords == goal_coords
     end
 
+    @impl true
     def heuristic({coords, _heading} = current, goal) do
       min_turns(current, goal) * 1000 + manhattan_distance(coords, goal)
     end
 
-    defp cost({_, heading1}, {_, heading2}) do
-      cond do
-        heading1 == heading2 -> 1
-        # U-turn
-        heading1 == invert(heading2) -> 2001
-        :else -> 1001
-      end
+    defp cost({_, heading}, {_, heading}), do: 1
+    defp cost({_, {0, _}}, {_, {_, 0}}), do: 1001
+    defp cost({_, {_, 0}}, {_, {0, _}}), do: 1001
+
+    # at goal
+    defp min_turns({goal, _heading}, goal), do: 0
+
+    # directly above or below goal
+    defp min_turns({{gx, y}, {_hx, hy}}, {gx, gy}) do
+      abs(sign(gy - y) - hy)
     end
 
-    defp min_turns({coords, heading}, goal) do
-      {x, y} = heading
-      {goal_vx, goal_vy} = subtract(goal, coords)
+    # directly left or right of goal
+    defp min_turns({{x, gy}, {hx, _hy}}, {gx, gy}) do
+      abs(sign(gx - x) - hx)
+    end
 
-      gx = sign(goal_vx)
-      gy = sign(goal_vy)
+    # not aligned with goal on either axis - facing left/right
+    defp min_turns({{x, _y}, {hx, 0}}, {gx, _gy}) do
+      max(1, abs(sign(gx - x) - hx))
+    end
 
-      min(abs(x - gx) + abs(y - gy), 2)
+    # not aligned with goal on either axis - facing up/down
+    defp min_turns({{_x, y}, {0, hy}}, {_gx, gy}) do
+      max(1, abs(sign(gy - y) - hy))
     end
 
     defp subtract({x1, y1}, {x2, y2}), do: {x1 - x2, y1 - y2}
@@ -73,33 +83,18 @@ defmodule AdventOfCode.Solution.Year2024.Day16 do
     grid = G.replace_many(grid, %{start_coords => ?., goal_coords => ?.})
     start_position = {start_coords, {1, 0}}
 
-    start = %AdventOfCode.Algo.AStar.State{
-      current: start_position,
-      heuristic: DeerRaceImpl.heuristic(start_position, goal_coords)
-    }
-
-    IO.inspect(map_size(grid.grid) * 4, label: "# of possible states")
-
-    {grid, start, goal_coords}
+    {grid, start_position, goal_coords}
   end
 
   def part1({grid, start, goal}) do
-    {_path, cost} =
-      grid
-      |> Algo.a_star(start, goal, DeerRaceImpl)
-      |> Enum.fetch!(0)
-
+    {:ok, {_path, cost}} = Algo.a_star_one(grid, start, goal, DeerRaceImpl)
     cost
   end
 
   def part2({grid, start, goal}) do
-    all_shortest_paths =
-      grid
-      |> Algo.a_star(start, goal, DeerRaceImpl)
-      |> Stream.map(fn {path, _cost} -> Enum.map(path, fn {coords, _heading} -> coords end) end)
-
-    all_shortest_paths
-    |> Stream.flat_map(& &1)
+    grid
+    |> Algo.a_star_all(start, goal, DeerRaceImpl)
+    |> Stream.flat_map(fn {path, _cost} -> Enum.map(path, fn {coords, _heading} -> coords end) end)
     |> Stream.uniq()
     |> Enum.count()
   end

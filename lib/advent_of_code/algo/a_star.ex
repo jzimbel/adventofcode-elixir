@@ -1,10 +1,17 @@
 defmodule AdventOfCode.Algo.AStar do
   @moduledoc """
-  A* search implementation for Grid.
+  Generalized A* graph search.
   """
-  alias AdventOfCode.Grid, as: G
   require AdventOfCode.PriorityQueue, as: Q
+
   use TypedStruct
+
+  @typedoc """
+  Graph being searched.
+
+  This is usually a Grid.
+  """
+  @type graph :: term
 
   @typedoc """
   Unique identifier for a node in the graph being searched.
@@ -18,26 +25,26 @@ defmodule AdventOfCode.Algo.AStar do
   # Node state #
   ##############
   typedstruct module: State do
-    field(:current, AdventOfCode.Algo.AStar.node_id(), enforce: true)
-    field(:heuristic, integer | :infinity, enforce: true)
-    field(:score, integer, default: 0)
+    field :current, AdventOfCode.Algo.AStar.node_id(), enforce: true
+    field :heuristic, integer | :infinity, enforce: true
+    field :score, integer, default: 0
 
-    field(:came_from, %{AdventOfCode.Algo.AStar.node_id() => AdventOfCode.Algo.AStar.node_id()},
+    field :came_from, %{AdventOfCode.Algo.AStar.node_id() => AdventOfCode.Algo.AStar.node_id()},
       default: %{}
-    )
   end
 
   #######################
   # Global search state #
   #######################
   typedstruct module: Search, enforce: true do
-    field(:impl, module)
-    field(:grid, G.t())
-    field(:goal, G.coordinates())
-    field(:q, MapSet.t(State.t()))
-    field(:shortest_path_cost, integer | :infinity)
+    field :impl, module
+    field :graph, AdventOfCode.Algo.AStar.graph()
+    field :goal, term
+    field :q, Q.t(State.t())
+    field :shortest_path_cost, integer | :infinity
     # maps visited nodes to their min scores
-    field(:visited, %{AdventOfCode.Algo.AStar.node_id() => integer})
+    field :visited, %{AdventOfCode.Algo.AStar.node_id() => integer}
+    field :exhaustive?, boolean
   end
 
   #############
@@ -49,8 +56,9 @@ defmodule AdventOfCode.Algo.AStar do
     # and the generalized code need to access state values.
     # So, likely would need to add more callbacks for the generalized code
     # to use, so that it isn't directly reaching into the struct fields.
-    @callback next(State.t(), Search.t()) :: Enumerable.t(State.t())
-    @callback at_goal?(State.t(), G.coordinates()) :: boolean
+    @callback next_states(State.t(), Search.t()) :: Enumerable.t(State.t())
+    @callback at_goal?(State.t(), goal :: term) :: boolean
+    @callback heuristic(AdventOfCode.Algo.AStar.node_id(), goal :: term) :: non_neg_integer
     @callback priority(State.t()) :: term
 
     defmacro __using__(_) do
@@ -58,12 +66,12 @@ defmodule AdventOfCode.Algo.AStar do
         @behaviour AdventOfCode.Algo.AStar.Impl
 
         @impl true
-        def next(state, search) do
+        def next_states(state, search) do
           for {neighbor, ?.} <-
-                AdventOfCode.Grid.adjacent_cells(search.grid, state.current, :cardinal) do
+                AdventOfCode.Grid.adjacent_cells(search.graph, state.current, :cardinal) do
             %AdventOfCode.Algo.AStar.State{
               current: neighbor,
-              heuristic: AdventOfCode.Algo.Helpers.manhattan_distance(neighbor, search.goal),
+              heuristic: heuristic(neighbor, search.goal),
               score: state.score + 1,
               came_from: Map.put(state.came_from, neighbor, state.current)
             }
@@ -72,6 +80,10 @@ defmodule AdventOfCode.Algo.AStar do
 
         @impl true
         def at_goal?(state, goal), do: state.current == goal
+
+        @impl true
+        def heuristic(coords, goal),
+          do: AdventOfCode.Algo.Helpers.manhattan_distance(coords, goal)
 
         @impl true
         def priority(state) do
@@ -92,34 +104,48 @@ defmodule AdventOfCode.Algo.AStar do
   @type path_info :: {path, cost :: integer}
   @type path :: list(node_id())
 
-  @spec run(G.t(), State.t(), G.coordinates()) :: Enumerable.t(path_info)
-  @spec run(G.t(), State.t(), term, module) :: Enumerable.t(path_info)
-  def run(grid, start, goal, impl \\ DefaultImpl) do
+  @type opt :: {:impl, module} | {:exhaustive?, boolean}
+
+  @spec run(
+          AdventOfCode.Grid.t(),
+          AdventOfCode.Grid.coordinates(),
+          AdventOfCode.Grid.coordinates()
+        ) ::
+          Enumerable.t(path_info)
+  @spec run(graph(), node_id(), term, [opt]) :: Enumerable.t(path_info)
+  def run(graph, start_node_id, goal, opts \\ []) do
+    impl = Keyword.get(opts, :impl, DefaultImpl)
+    exhaustive? = Keyword.get(opts, :exhaustive?, true)
+
     Code.ensure_loaded!(impl)
 
-    search =
-      %Search{
-        impl: impl,
-        grid: grid,
-        goal: goal,
-        q: Q.new([start], &impl.priority/1),
-        shortest_path_cost: :infinity,
-        visited: %{}
-      }
+    start = %State{
+      current: start_node_id,
+      heuristic: impl.heuristic(start_node_id, goal)
+    }
 
-    Stream.unfold(search, &a_star/1)
+    %Search{
+      impl: impl,
+      graph: graph,
+      goal: goal,
+      q: Q.new([start], &impl.priority/1),
+      shortest_path_cost: :infinity,
+      visited: %{},
+      exhaustive?: exhaustive?
+    }
+    |> Stream.unfold(&a_star/1)
   end
 
   # Recurses until it finds a path or runs out of nodes to search.
   # Emits the path if it is a shortest path, otherwise returns nil to end the stream.
-  # (We know there are no more shortest paths as soon as we see a longer one)
+  # (We know there are no more shortest paths as soon as we see a longer one.)
   @spec a_star(Search.t()) :: {{path, integer}, Search.t()} | nil
   defp a_star(search) when Q.is_empty(search.q), do: nil
 
   defp a_star(search) do
     {state, search} = get_and_update_in(search.q, &Q.pop!/1)
 
-    case check_state_score(state, search.visited, search.shortest_path_cost) do
+    case check_state_score(state, search) do
       :ok ->
         search = update_in(search.visited, &Map.put(&1, state.current, state.score))
 
@@ -127,10 +153,9 @@ defmodule AdventOfCode.Algo.AStar do
              state.score <= search.shortest_path_cost do
           path = reconstruct_path(state.current, state.came_from)
           cost = state.score
-          search = %{search | shortest_path_cost: cost}
-          {{path, cost}, search}
+          {{path, cost}, put_in(search.shortest_path_cost, cost)}
         else
-          a_star(update_search(search, state))
+          a_star(push_next_states(search, state))
         end
 
       :skip ->
@@ -141,19 +166,20 @@ defmodule AdventOfCode.Algo.AStar do
     end
   end
 
-  defp check_state_score(state, _visited, shortest_path_cost)
-       when state.score > shortest_path_cost,
+  defp check_state_score(state, search)
+       when state.score > search.shortest_path_cost,
        do: :halt
 
-  defp check_state_score(state, visited, _shortest_path_cost) do
-    case Map.fetch(visited, state.current) do
+  defp check_state_score(state, search) do
+    case Map.fetch(search.visited, state.current) do
       {:ok, prev_score} when state.score > prev_score -> :skip
+      {:ok, prev_score} when not search.exhaustive? and state.score == prev_score -> :skip
       _ -> :ok
     end
   end
 
-  defp update_search(search, state) do
-    for next_state <- search.impl.next(state, search), reduce: search do
+  defp push_next_states(search, state) do
+    for next_state <- search.impl.next_states(state, search), reduce: search do
       search -> update_in(search.q, &Q.push(&1, next_state))
     end
   end

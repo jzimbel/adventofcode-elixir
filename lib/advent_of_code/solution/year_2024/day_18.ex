@@ -25,10 +25,7 @@ defmodule AdventOfCode.Solution.Year2024.Day18 do
 
     goal = {grid.width - 1, grid.height - 1}
 
-    {_path, cost} =
-      grid
-      |> Algo.a_star(start_state(goal), goal)
-      |> Enum.fetch!(0)
+    {:ok, {_path, cost}} = Algo.a_star_one(grid, {0, 0}, goal)
 
     cost
   end
@@ -41,13 +38,6 @@ defmodule AdventOfCode.Solution.Year2024.Day18 do
     else
       _initial_path_blocked_or_path_never_blocked -> nil
     end
-  end
-
-  defp start_state(goal) do
-    %AdventOfCode.Algo.AStar.State{
-      current: {0, 0},
-      heuristic: AdventOfCode.Algo.Helpers.manhattan_distance({0, 0}, goal)
-    }
   end
 
   defp check_drop(drop, {grid, prev_path}) do
@@ -64,10 +54,10 @@ defmodule AdventOfCode.Solution.Year2024.Day18 do
   defp find_path(grid, nil, _drop) do
     goal = {grid.width - 1, grid.height - 1}
 
-    grid
-    |> Algo.a_star(start_state(goal), goal)
-    |> Stream.map(fn {path, _cost} -> path end)
-    |> Enum.fetch(0)
+    case Algo.a_star_one(grid, {0, 0}, goal) do
+      {:ok, {path, _cost}} -> {:ok, path}
+      :error -> :error
+    end
   end
 
   defp find_path(grid, prev_path, drop) do
