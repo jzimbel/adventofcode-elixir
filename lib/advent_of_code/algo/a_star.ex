@@ -67,7 +67,9 @@ defmodule AdventOfCode.Algo.AStar do
 
         @impl true
         def next_states(state, search) do
-          for {neighbor, ?.} <-
+          prev = state.came_from[state.current]
+
+          for {neighbor, ?.} when neighbor != prev <-
                 AdventOfCode.Grid.adjacent_cells(search.graph, state.current, :cardinal) do
             %AdventOfCode.Algo.AStar.State{
               current: neighbor,
