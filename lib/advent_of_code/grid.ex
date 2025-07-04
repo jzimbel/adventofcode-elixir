@@ -341,7 +341,7 @@ defmodule AdventOfCode.Grid do
       ...> def
       ...> ghi
       ...> |)
-      iex> replace_many(grid, %{{0,0} => ?X, {2,0} => ?Y, {0,2} => ?Z})
+      iex> replace(grid, %{{0,0} => ?X, {2,0} => ?Y, {0,2} => ?Z})
       #AdventOfCode.Grid<
         [width: 3, height: 3]
         XbY
@@ -349,8 +349,8 @@ defmodule AdventOfCode.Grid do
         Zhi
       >
   """
-  @spec replace_many(t(a), grid(a)) :: t(a) when a: var
-  def replace_many(%T{} = t, cells) do
+  @spec replace(t(a), grid(a)) :: t(a) when a: var
+  def replace(%T{} = t, cells) do
     valid = Map.intersect(t.grid, cells)
 
     if map_size(valid) != map_size(cells) do

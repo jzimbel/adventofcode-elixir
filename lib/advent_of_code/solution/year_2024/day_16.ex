@@ -80,7 +80,7 @@ defmodule AdventOfCode.Solution.Year2024.Day16 do
     {start_coords, ?S} = Enum.find(grid, &match?({_, ?S}, &1))
     {goal_coords, ?E} = Enum.find(grid, &match?({_, ?E}, &1))
 
-    grid = G.replace_many(grid, %{start_coords => ?., goal_coords => ?.})
+    grid = G.replace(grid, %{start_coords => ?., goal_coords => ?.})
     start_position = {start_coords, {1, 0}}
 
     {grid, start_position, goal_coords}

@@ -70,7 +70,7 @@ defmodule AdventOfCode.Solution.Year2024.Day15 do
     pushed = Map.new(to_push, fn {point, char} -> {G.sum_coordinates(point, heading), char} end)
     updater = Map.merge(cleared, pushed)
 
-    grid = G.replace_many(grid, updater)
+    grid = G.replace(grid, updater)
     {against, grid}
   catch
     # `get_boxes_to_push` throws :wall if it encounters a wall
@@ -118,7 +118,7 @@ defmodule AdventOfCode.Solution.Year2024.Day15 do
     first_empty = put_elem(hd(cells), 1, ?.)
     shifted = Enum.map(cells, fn {point, char} -> {G.sum_coordinates(point, heading), char} end)
     replacements = Map.new([first_empty | shifted])
-    G.replace_many(grid, replacements)
+    G.replace(grid, replacements)
   end
 
   defp box_gps({x, y}), do: x + 100 * y
