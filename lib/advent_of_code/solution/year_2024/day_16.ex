@@ -10,13 +10,12 @@ defmodule AdventOfCode.Solution.Year2024.Day16 do
 
     @impl true
     def next_states(state, search) do
-      {coords, heading} = state.current
+      {coords, _} = state.current
+      {prev_coords, _} = Map.get(state.came_from, state.current, {nil, nil})
 
       for {neighbor, ?.} <- G.adjacent_cells(search.graph, coords, :cardinal),
-          next_heading = subtract(neighbor, coords),
-          # Shortest path will never contain a U-turn.
-          next_heading != invert(heading) do
-        next = {neighbor, next_heading}
+          neighbor != prev_coords do
+        next = {neighbor, subtract(neighbor, coords)}
 
         %Algo.AStar.State{
           current: next,
@@ -66,7 +65,6 @@ defmodule AdventOfCode.Solution.Year2024.Day16 do
     end
 
     defp subtract({x1, y1}, {x2, y2}), do: {x1 - x2, y1 - y2}
-    defp invert({x, y}), do: {-x, -y}
 
     defp sign(0), do: 0
     defp sign(n) when n > 0, do: 1
