@@ -27,7 +27,8 @@ defmodule Mix.Tasks.Advent.Try do
     Mix.Task.run("advent.test", args ++ ["--", "--raise"])
 
     flair = Enum.random(["😎", "✨", "🕺", "💃", "🦄", "🐳", "🦝", "🧇", "🎇", "🆒"])
-    Mix.shell().info(IO.ANSI.format([:bright, :yellow, "\nTests passed #{flair}\n"]))
+    Mix.shell().info(IO.ANSI.format([:bright, :yellow, "\nTests passed #{flair}"]))
+    Mix.shell().info(IO.ANSI.format([:bright, :yellow, "Running on full puzzle input...\n"]))
 
     Mix.env(:dev)
     Mix.Task.run("advent.solve", args)
