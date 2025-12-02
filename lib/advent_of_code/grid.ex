@@ -24,7 +24,7 @@ defmodule AdventOfCode.Grid do
   @type cell(a) :: {coordinates, a}
   @type cell :: cell(term)
 
-  @type adjacency_type :: :all | :cardinal | :intercardinal | :up
+  @type adjacency_type :: :all | :cardinal | :intercardinal
 
   @type heading :: heading_name | heading_coords
   @type heading_name :: :n | :e | :s | :w | :ne | :se | :sw | :nw
@@ -271,6 +271,17 @@ defmodule AdventOfCode.Grid do
   end
 
   @doc ~S"""
+  Returns the number of cells in the grid.
+
+      iex> size(from_input("AB\nCD\n"))
+      4
+  """
+  @spec size(t()) :: non_neg_integer
+  def size(%T{} = t) do
+    map_size(t.grid)
+  end
+
+  @doc ~S"""
   Returns all cells in the grid, grouped into rows starting from the top.
 
       iex> rows(from_input("AB\nCD\n"))
@@ -429,6 +440,34 @@ defmodule AdventOfCode.Grid do
   end
 
   @doc ~S"""
+  Converts the grid to a map of %{cell_value => %{heading_coords}}
+
+  All cells in the grid must have unique values.
+
+      iex> grid = from_input("AB\nCD\n")
+      iex> to_graph(grid, :cardinal)
+      %{
+        ?A => %{{1,0} => ?B, {0,1} => ?C},
+        ?B => %{{0,1} => ?D, {-1,0} => ?A},
+        ?C => %{{1,0} => ?D, {0,-1} => ?A},
+        ?D => %{{-1,0} => ?C, {0,-1} => ?B}
+      }
+  """
+  @spec to_graph(t(a)) :: %{a => %{heading_coords() => a}} when a: var
+  def to_graph(%T{} = t, neighbor_adjacency \\ :all) do
+    for {coords, node_id} <- t, into: %{} do
+      edges =
+        t
+        |> adjacent_cells(coords, neighbor_adjacency)
+        |> Map.new(fn {neighbor_coords, node_id} ->
+          {subtract_coordinates(neighbor_coords, coords), node_id}
+        end)
+
+      {node_id, edges}
+    end
+  end
+
+  @doc ~S"""
   Returns the number of cells for which `predicate` returns a truthy value.
 
       iex> grid = from_input("AB\nCD\n")
@@ -469,49 +508,116 @@ defmodule AdventOfCode.Grid do
     Enum.filter(t.grid, predicate)
   end
 
-  @doc ~S"""
+  @doc """
   Returns the first cell for which `predicate` returns a truthy value, or nil if none is found.
+
+  The default search order is across each row from left to right, starting with the top row.
 
   If you need to search the grid in a particular order, pass the
   appropriate value as the third argument.
 
-  Keep in mind that specifying a search order forces a sort of the entire grid.
-  It may be more efficient to use `filter_cells` + `Enum.sort(...)` + `Enum.at(0)` instead.
-
-  - `:unspecified` - Search order doesn't matter (default)
-  - `:columnar` - Search down each column, from left to right
-  - `:row_wise` - Search across each row, from top to bottom
+  - A 2-element keyword list with values of `:asc` or `:desc` - First element specifies
+    primary sort order, second element specifies secondary.
+    E.g. `[y: :asc, x: :desc]` causes all cells in the first row to be searched from right to left,
+    then all cells in the second row right to left, and so on.
   - a 1-arity fn - The fn will be passed to `Enum.sort_by` for custom sort order by key.
   - a 2-arity fn - The fn will be passed to `Enum.sort` for custom sort order by comparison.
 
+  Keep in mind that passing a fn for search order forces a sort of the entire grid.
+
   ## Examples
 
-      iex> grid = from_input("..\n*.\n")
-      iex> find_cell(grid, &match?({_coords, ?*}, &1))
-      {{0,1}, ?*}
-
-      iex> grid = from_input(".*\n**\n")
-      iex> predicate = &match?({_coords, ?*}, &1)
-      iex> find_cell(grid, predicate, :columnar)
-      {{0,1}, ?*}
-      iex> find_cell(grid, predicate, :row_wise)
-      {{1,0}, ?*}
-      iex> find_cell(grid, predicate, fn {{x, y}, _} -> {-x, -y} end)
-      {{1,1}, ?*}
+      iex> grid = from_input(~S|
+      ...> .........
+      ...> ...A*B...
+      ...> ..*...*..
+      ...> .H.....C.
+      ...> .*.....*.
+      ...> .G.....D.
+      ...> ..*...*..
+      ...> ...F*E...
+      ...> .........
+      ...> |)
+      iex> predicate = &(not match?({_coords, ?.}, &1))
+      iex> find_cell(grid, predicate) |> elem(1)
+      ?A
+      iex> find_cell(grid, predicate, y: :asc, x: :asc) |> elem(1)
+      ?A
+      iex> find_cell(grid, predicate, y: :asc, x: :desc) |> elem(1)
+      ?B
+      iex> find_cell(grid, predicate, x: :desc, y: :asc) |> elem(1)
+      ?C
+      iex> find_cell(grid, predicate, x: :desc, y: :desc) |> elem(1)
+      ?D
+      iex> find_cell(grid, predicate, y: :desc, x: :desc) |> elem(1)
+      ?E
+      iex> find_cell(grid, predicate, y: :desc, x: :asc) |> elem(1)
+      ?F
+      iex> find_cell(grid, predicate, x: :asc, y: :desc) |> elem(1)
+      ?G
+      iex> find_cell(grid, predicate, x: :asc, y: :asc) |> elem(1)
+      ?H
   """
   @spec find_cell(t(a), cell_pred(a)) :: cell(a) | nil when a: var
-  @spec find_cell(t(a), cell_pred(a), atom) :: cell(a) | nil when a: var
+  @spec find_cell(t(a), cell_pred(a)) :: cell(a) | nil when a: var
+  @spec find_cell(t(a), cell_pred(a), [{:x, :asc | :desc} | {:y, :asc | :desc}]) :: cell(a) | nil
+        when a: var
   @spec find_cell(t(a), cell_pred(a), (cell(a) -> any)) :: cell(a) | nil when a: var
   @spec find_cell(t(a), cell_pred(a), (cell(a), cell(a) -> boolean)) :: cell(a) | nil when a: var
-  def find_cell(%T{} = t, predicate, search_order \\ :unspecified) do
-    case search_order do
-      :unspecified -> Enum.find(t.grid, predicate)
-      :columnar -> t.grid |> Enum.sort() |> Enum.find(predicate)
-      :row_wise -> t.grid |> Enum.sort_by(fn {{x, y}, _} -> {y, x} end) |> Enum.find(predicate)
-      key_fn when is_function(key_fn, 1) -> t.grid |> Enum.sort_by(key_fn) |> Enum.find(predicate)
-      cmp_fn? when is_function(cmp_fn?, 2) -> t.grid |> Enum.sort(cmp_fn?) |> Enum.find(predicate)
+  def find_cell(%T{} = t, predicate, search_order \\ [y: :asc, x: :asc]) do
+    t
+    |> order_cells(search_order)
+    |> Enum.find(predicate)
+  end
+
+  defp order_cells(t, search_order) when is_list(search_order) do
+    :ok = validate_ordering(search_order)
+
+    t
+    |> coords_generator(search_order)
+    |> Stream.map(&{&1, at(t, &1)})
+  end
+
+  defp order_cells(t, key_fn) when is_function(key_fn, 1) do
+    Enum.sort_by(t.grid, key_fn)
+  end
+
+  defp order_cells(t, cmp_fn?) when is_function(cmp_fn?, 2) do
+    Enum.sort(t.grid, cmp_fn?)
+  end
+
+  defp validate_ordering(ordering) do
+    if Keyword.keyword?(ordering) and
+         Keyword.keys(ordering) in [[:x, :y], [:y, :x]] and
+         Enum.all?(Keyword.values(ordering), &(&1 in [:asc, :desc])) do
+      :ok
+    else
+      raise ArgumentError,
+            "`ordering` must be a 2-element keyword list with one `{:x, :asc | :desc}` " <>
+              "entry and one `{:y, :asc | :desc}` entry, got: #{inspect(ordering)}"
     end
   end
+
+  defp coords_generator(t, [outer, inner]) do
+    inner_stream_fn =
+      case inner do
+        {:x, direction} ->
+          range = make_range(0, t.width - 1, direction)
+          fn y -> Stream.map(range, &{&1, y}) end
+
+        {:y, direction} ->
+          range = make_range(0, t.height - 1, direction)
+          fn x -> Stream.map(range, &{x, &1}) end
+      end
+
+    case outer do
+      {:x, direction} -> Stream.flat_map(make_range(0, t.width - 1, direction), inner_stream_fn)
+      {:y, direction} -> Stream.flat_map(make_range(0, t.height - 1, direction), inner_stream_fn)
+    end
+  end
+
+  defp make_range(first, last, :asc), do: first..last//1
+  defp make_range(first, last, :desc), do: last..first//-1
 
   @doc """
   Returns the cell adjacent to `coords` in `heading` direction,
@@ -853,6 +959,16 @@ defmodule AdventOfCode.Grid do
       when is_integer(x1) and is_integer(y1) and is_integer(x2) and is_integer(y2),
       do: {x1 + x2, y1 + y2}
 
+  @doc """
+  subtracts the second coordinate pair from the first.
+
+      iex> subtract_coordinates({3,5}, {1,1})
+      {2,4}
+  """
+  def subtract_coordinates({x1, y1}, {x2, y2})
+      when is_integer(x1) and is_integer(y1) and is_integer(x2) and is_integer(y2),
+      do: {x1 - x2, y1 - y2}
+
   defp get_line_of_cells(t, step, coords, lazy? \\ false)
 
   defp get_line_of_cells(t, step, coords, false) do
@@ -886,7 +1002,7 @@ defmodule AdventOfCode.Grid do
   end
 
   defp normalize_heading({x, y} = heading)
-       when (x in -1..1 and y in -1..1 and x != 0) or y != 0 do
+       when x in -1..1 and y in -1..1 and (x != 0 or y != 0) do
     heading
   end
 end
