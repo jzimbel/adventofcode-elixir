@@ -6,6 +6,9 @@ defmodule Mix.Tasks.Advent.Gen do
   # DESCRIPTION
   Generates source files for a new year of Advent of Code puzzles and populates them with boilerplate code.
 
+  For years 2025 and later, the event was reduced from 25 to 12 days.
+  As a result, fewer files will be generated for those years.
+
       /
       |- lib/
       | |- advent_of_code/
@@ -29,46 +32,46 @@ defmodule Mix.Tasks.Advent.Gen do
 
   require Mix.Generator
 
-  @days 1..25
-
   @impl Mix.Task
   def run(args) do
     with {[year: year], _, []} when year >= 2015 <-
            OptionParser.parse(args, aliases: [y: :year], strict: [year: :integer]) do
       generate(year)
     else
+      {[year: year], _, []} when year <= 2015 -> Mix.shell().error("Year must be 2015 or later.")
       _ -> Mix.shell().error("Invalid argument.")
     end
   end
 
   defp generate(year) do
+    days = days_for_year(year)
     solution_dir = Path.join(lib_root_dir(), year_subdir(year))
     test_dir = Path.join(test_root_dir(), year_subdir(year))
 
-    Enum.each([solution_dir, test_dir], &Mix.Generator.create_directory/1)
+    Mix.Generator.create_directory(solution_dir)
+    Mix.Generator.create_directory(test_dir)
 
-    Enum.each(
-      @days,
-      &Mix.Generator.create_file(
-        Path.join(
-          solution_dir,
-          :io_lib.format("day_~2..0B.ex", [&1])
-        ),
-        solution_template(year: year, day: &1)
-      )
-    )
+    for day <- days do
+      filename = :io_lib.fwrite("day_~2..0B.ex", [day])
 
-    Enum.each(
-      @days,
-      &Mix.Generator.create_file(
-        Path.join(
-          test_dir,
-          :io_lib.format("day_~2..0B_test.exs", [&1])
-        ),
-        test_template(year: year, day: &1)
+      Mix.Generator.create_file(
+        Path.join(solution_dir, filename),
+        solution_template(year: year, day: day)
       )
-    )
+    end
+
+    for day <- days do
+      filename = :io_lib.format("day_~2..0B_test.exs", [day])
+
+      Mix.Generator.create_file(
+        Path.join(test_dir, filename),
+        test_template(year: year, day: day)
+      )
+    end
   end
+
+  defp days_for_year(year) when year in 2015..2024, do: 1..25
+  defp days_for_year(year) when year >= 2025, do: 1..12
 
   defp lib_root_dir, do: Path.join(File.cwd!(), "lib")
   defp test_root_dir, do: Path.join(File.cwd!(), "test")
