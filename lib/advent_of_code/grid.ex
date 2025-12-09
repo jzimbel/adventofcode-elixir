@@ -34,11 +34,11 @@ defmodule AdventOfCode.Grid do
   defstruct @enforce_keys
 
   adjacency_deltas_by_type = %{
-  # List of coords that produce the 8 coordinates surrounding a given coord when added to it
+    # List of coords that produce the 8 coordinates surrounding a given coord when added to it
     all: for(x <- -1..1, y <- -1..1, not (x == 0 and y == 0), do: {x, y}),
-  # List of coords that produce the 4 coordinates horizontally/vertically adjacent to a given coord when added to it
+    # List of coords that produce the 4 coordinates horizontally/vertically adjacent to a given coord when added to it
     cardinal: for(x <- -1..1, y <- -1..1, abs(x) + abs(y) == 1, do: {x, y}),
-  # List of coords that produce the 4 coordinates diagonally adjacent to a given coord when added to it
+    # List of coords that produce the 4 coordinates diagonally adjacent to a given coord when added to it
     intercardinal: for(x <- -1..1, y <- -1..1, abs(x) + abs(y) == 2, do: {x, y})
   }
 
@@ -114,7 +114,7 @@ defmodule AdventOfCode.Grid do
   def from_input(input, mapper) do
     charlists =
       input
-      |> String.split()
+      |> String.split("\n", trim: true)
       |> Enum.map(&String.to_charlist/1)
 
     height = length(charlists)
