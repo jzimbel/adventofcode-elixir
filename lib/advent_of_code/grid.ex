@@ -33,20 +33,19 @@ defmodule AdventOfCode.Grid do
   @enforce_keys ~w[grid width height]a
   defstruct @enforce_keys
 
+  adjacency_deltas_by_type = %{
   # List of coords that produce the 8 coordinates surrounding a given coord when added to it
-  @all_adjacent_deltas for x <- -1..1, y <- -1..1, not (x == 0 and y == 0), do: {x, y}
-
+    all: for(x <- -1..1, y <- -1..1, not (x == 0 and y == 0), do: {x, y}),
   # List of coords that produce the 4 coordinates horizontally/vertically adjacent to a given coord when added to it
-  @cardinal_adjacent_deltas for x <- -1..1, y <- -1..1, abs(x) + abs(y) == 1, do: {x, y}
-
+    cardinal: for(x <- -1..1, y <- -1..1, abs(x) + abs(y) == 1, do: {x, y}),
   # List of coords that produce the 4 coordinates diagonally adjacent to a given coord when added to it
-  @intercardinal_adjacent_deltas for x <- -1..1, y <- -1..1, abs(x) + abs(y) == 2, do: {x, y}
-
-  @adjacency_deltas_by_type %{
-    all: @all_adjacent_deltas,
-    cardinal: @cardinal_adjacent_deltas,
-    intercardinal: @intercardinal_adjacent_deltas
+    intercardinal: for(x <- -1..1, y <- -1..1, abs(x) + abs(y) == 2, do: {x, y})
   }
+
+  @spec adjacency_deltas(adjacency_type) :: [heading_coords]
+  for {adjacency_type, deltas} <- adjacency_deltas_by_type do
+    defp adjacency_deltas(unquote(adjacency_type)), do: unquote(deltas)
+  end
 
   @doc """
   Creates a Grid whose cells all have the given value. (Default: ?.)
@@ -440,7 +439,7 @@ defmodule AdventOfCode.Grid do
   end
 
   @doc ~S"""
-  Converts the grid to a map of %{cell_value => %{heading_coords}}
+  Converts the grid to a map of %{cell_value => %{heading_coords => cell_value}}
 
   All cells in the grid must have unique values.
 
@@ -702,9 +701,12 @@ defmodule AdventOfCode.Grid do
   """
   @spec adjacent_cells(t(a), coordinates, adjacency_type, boolean) :: list(cell(a)) when a: var
   def adjacent_cells(%T{} = t, coords, adjacency_type \\ :all, in_bounds_only? \\ true) do
-    @adjacency_deltas_by_type[adjacency_type]
-    |> Enum.map(&sum_coordinates(coords, &1))
-    |> Enum.map(fn adjacent_coords -> {adjacent_coords, at(t, adjacent_coords)} end)
+    adjacency_type
+    |> adjacency_deltas()
+    |> Enum.map(fn delta ->
+      adjacent_coords = sum_coordinates(coords, delta)
+      {adjacent_coords, at(t, adjacent_coords)}
+    end)
     |> then(fn cells ->
       if in_bounds_only? do
         Enum.reject(cells, fn {_coords, value} -> is_nil(value) end)
@@ -741,7 +743,8 @@ defmodule AdventOfCode.Grid do
   # We don't actually need to do any map lookups on the grid in this case.
   # (Maybe this function should be moved to a different module?)
   def adjacent_coords(_t, coords, adjacency_type, false) do
-    @adjacency_deltas_by_type[adjacency_type]
+    adjacency_type
+    |> adjacency_deltas()
     |> Enum.map(&sum_coordinates(coords, &1))
   end
 
@@ -849,7 +852,8 @@ defmodule AdventOfCode.Grid do
   @spec lines_of_cells(t(a), coordinates, adjacency_type, true) :: [Enumerable.t(cell(a))]
         when a: var
   def lines_of_cells(%T{} = t, coords, adjacency_type \\ :all, lazy? \\ false) do
-    @adjacency_deltas_by_type[adjacency_type]
+    adjacency_type
+    |> adjacency_deltas()
     |> Enum.map(&get_line_of_cells(t, &1, sum_coordinates(coords, &1), lazy?))
   end
 
