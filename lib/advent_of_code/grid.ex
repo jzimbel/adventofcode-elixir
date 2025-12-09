@@ -467,6 +467,49 @@ defmodule AdventOfCode.Grid do
   end
 
   @doc ~S"""
+  Converts the grid to PNG image data using the `value_to_color` to color the pixel corresponding to each cell.
+
+      iex> grid = from_input("#.\n.#\n")
+      iex> {:ok, png_data} = to_png(grid, %{?# => "#000000", ?. => "#FFFFFF"})
+      iex> is_list(png_data)
+      true
+  """
+  @spec to_png(t(a), %{a => String.t()}) :: {:ok, iolist} | {:error, keyword} when a: var
+  def to_png(%T{} = t, value_to_color) when map_size(value_to_color) > 0 do
+    uniq_count = value_to_color |> Map.values() |> Enum.uniq() |> length()
+    min_depth = uniq_count |> :math.log2() |> ceil()
+    depth = Enum.find([1, 2, 4, 8, 16], &(&1 >= min_depth))
+
+    {palette, {value_to_palette_index, _}} =
+      value_to_color
+      |> Enum.with_index()
+      |> Enum.flat_map_reduce({%{}, %{}}, fn {{value, "#" <> color}, i}, {val_to_i, color_to_i} ->
+        if Map.has_key?(color_to_i, color) do
+          {[], {put_in(val_to_i[value], color_to_i[color]), color_to_i}}
+        else
+          c = List.to_tuple(for <<v::2-bytes <- color>>, do: String.to_integer(v, 16))
+          {[c], {put_in(val_to_i[value], i), put_in(color_to_i[color], i)}}
+        end
+      end)
+
+    data =
+      for y <- 0..(t.height - 1)//1, x <- 0..(t.width - 1)//1 do
+        Map.fetch!(value_to_palette_index, at(t, {x, y}))
+      end
+
+    with %Pngex{} = pngex <-
+           Pngex.new(
+             width: t.width,
+             height: t.height,
+             depth: :"depth#{depth}",
+             type: :indexed,
+             palette: palette
+           ) do
+      {:ok, Pngex.generate(pngex, data)}
+    end
+  end
+
+  @doc ~S"""
   Returns the number of cells for which `predicate` returns a truthy value.
 
       iex> grid = from_input("AB\nCD\n")

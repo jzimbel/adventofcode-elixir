@@ -26,10 +26,11 @@ defmodule AdventOfCode.MixProject do
   defp deps do
     [
       {:benchee, "~> 1.3"},
+      {:pngex, "~> 0.1"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:explorer, "~> 0.10.0"},
       {:httpoison, "~> 2.0"},
-      {:typedstruct, "~> 0.5.3"},
+      {:typedstruct, "~> 0.5"},
       {:tz, "~> 0.26.5"}
     ]
   end
